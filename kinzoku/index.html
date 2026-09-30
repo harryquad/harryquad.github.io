@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>勤続年数 計算ツール｜入社日から在籍期間・有給付与日数を自動計算</title>
+<meta name="description" content="入社日と退職日（または今日）を入れるだけで、勤続年数を「○年○ヶ月○日」で計算。退職金の計算に使う勤続年数や、有給休暇の付与日数の目安もあわせて表示する無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/kinzoku/">
+<link rel="stylesheet" href="/common.css">
+</head>
+<body>
+<header class="site-header"><div><a href="/">退職・転職 お役立ちツール</a></div></header>
+<div class="wrap">
+  <h1>勤続年数 計算ツール</h1>
+  <p class="lead">入社日と退職日（まだ在籍中なら今日）を入れると、<strong>勤続年数</strong>を「○年○ヶ月○日」で表示します。<strong>退職金の計算に使う年数</strong>や<strong>有給休暇の付与日数</strong>の目安もわかります。</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field"><label for="start">入社日</label><input type="date" id="start" value="2020-04-01"></div>
+      <div class="field"><label for="end">退職日（在籍中なら今日）</label><input type="date" id="end"></div>
+    </div>
+    <button id="calc">計算する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>勤続年数についてよくある質問</h2>
+    <h3>勤続年数は入社日と退職日を含めて数える？</h3>
+    <p>一般的に、入社日から退職日までの両方を含めて数えます。たとえば4月1日入社・翌年3月31日退職なら、ちょうど1年です。</p>
+    <h3>退職金の勤続年数はどう数える？</h3>
+    <p>税金の計算（退職所得控除）では、1年未満の端数は1年に切り上げます。たとえば勤続10年2ヶ月なら11年として計算します。会社の退職金規程での数え方は会社ごとに違うので、規程を確認してください。</p>
+    <h3>有給休暇は何日もらえる？</h3>
+    <p>フルタイムの場合、入社から6ヶ月で10日、その後1年ごとに11日、12日、14日、16日、18日と増え、6年6ヶ月以上で毎年20日です（出勤率8割以上が条件）。有給の有効期限は2年です。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>計算結果は目安です。会社の規程によって数え方が異なる場合があります。</footer>
+</div>
+
+<script src="/common.js"></script>
+<script>
+// [勤続月数, 付与日数]（フルタイム・出勤率8割以上）
+const GRANTS = [[6, 10], [18, 11], [30, 12], [42, 14], [54, 16], [66, 18], [78, 20]];
+
+function calc() {
+  const out = document.getElementById("result");
+  out.hidden = false;
+  const start = parseDate(document.getElementById("start").value);
+  const end = parseDate(document.getElementById("end").value);
+  if (!start || !end) { out.innerHTML = '<p class="err">入社日と退職日を入力してください。</p>'; return; }
+  if (end < start) { out.innerHTML = '<p class="err">退職日は入社日より後の日付にしてください。</p>'; return; }
+
+  // 退職日を含めて数えるため、退職日の翌日までの期間を求める
+  const e = addDays(end, 1);
+  let y = e.getFullYear() - start.getFullYear();
+  let m = e.getMonth() - start.getMonth();
+  let d = e.getDate() - start.getDate();
+  if (d < 0) { m--; d += new Date(e.getFullYear(), e.getMonth(), 0).getDate(); }
+  if (m < 0) { y--; m += 12; }
+  const totalMonths = y * 12 + m;
+  const totalDays = Math.round((e - start) / 86400000);
+  const taxYears = Math.max(1, y + (m > 0 || d > 0 ? 1 : 0));
+  const grant = [...GRANTS].reverse().find(g => totalMonths >= g[0]);
+  const next = GRANTS.find(g => totalMonths < g[0]);
+  const nextDate = next ? new Date(start.getFullYear(), start.getMonth() + next[0], start.getDate()) : null;
+
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat good"><div class="k">勤続年数</div><div class="v">${y}年${m}ヶ月${d}日</div></div>
+      <div class="stat"><div class="k">退職金の税計算で使う年数</div><div class="v">${taxYears}年</div></div>
+      <div class="stat"><div class="k">今の有給付与日数（年）</div><div class="v">${grant ? grant[1] + "日" : "まだなし"}</div></div>
+    </div>
+    <table class="info">
+      <tr><td>在籍期間</td><td>${fmtDate(start)} 〜 ${fmtDate(end)}</td></tr>
+      <tr><td>通算月数</td><td>${totalMonths}ヶ月</td></tr>
+      <tr><td>通算日数</td><td>${totalDays.toLocaleString("ja-JP")}日</td></tr>
+      <tr><td>次の有給付与</td><td>${next ? `${fmtDate(nextDate)}に${next[1]}日` : "毎年20日（上限に到達）"}</td></tr>
+    </table>
+    <p class="note">この年数で退職金の税金を調べるなら → <a href="/taishokukin/">退職金の手取りを計算する</a>（勤続年数に ${taxYears} 年と入力）</p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+document.getElementById("end").value = ymd(new Date());
+document.getElementById("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>転職後の手取り比較ツール｜年収が上がると手取りはいくら増える？</title>
+<meta name="description" content="今の年収と転職後の年収を入れるだけで、社会保険料・所得税・住民税を差し引いた手取りを比較。年収アップで実際に手取りがいくら増えるか、月あたりの差もすぐわかる無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/tedori-hikaku/">
+<link rel="stylesheet" href="/common.css">
+</head>
+<body>
+<header class="site-header"><div><a href="/">退職・転職 お役立ちツール</a></div></header>
+<div class="wrap">
+  <h1>転職後の手取り比較ツール</h1>
+  <p class="lead">今の年収と転職後の年収を入れると、<strong>社会保険料・所得税・住民税</strong>を差し引いた<strong>手取り</strong>を比べられます。「年収が50万円上がったら、手取りは実際いくら増える？」がすぐわかります。</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field"><label for="now">今の年収（額面）</label><input type="number" id="now" min="0" value="450">
+        <div class="hint">万円単位（ボーナス込み）</div></div>
+      <div class="field"><label for="next">転職後の年収（額面）</label><input type="number" id="next" min="0" value="550">
+        <div class="hint">万円単位（ボーナス込み）</div></div>
+    </div>
+    <div class="field">
+      <label for="age">年齢</label>
+      <select id="age">
+        <option value="u40">39歳以下</option>
+        <option value="40">40〜64歳（介護保険料あり）</option>
+      </select>
+    </div>
+    <button id="calc">比較する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>手取りの計算についてよくある質問</h2>
+    <h3>手取りは年収の何割くらい？</h3>
+    <p>会社員で扶養家族がいない場合、手取りはおおよそ年収の75〜80%です。年収が高くなるほど所得税の税率が上がるので、手取りの割合は下がっていきます。</p>
+    <h3>年収が上がっても手取りがあまり増えないのはなぜ？</h3>
+    <p>増えた分には社会保険料（約15%）に加えて、所得税（5〜45%）と住民税（10%）がかかるためです。年収が増えた分のうち、手取りとして残るのはだいたい6〜8割です（年収が高いほど割合は下がります）。</p>
+    <h3>転職した1年目は住民税に注意</h3>
+    <p>住民税は前の年の収入をもとに、翌年6月から払います。年収が上がった年の住民税は翌年から増えるので、転職直後の手取りはこの表より少し多く、翌年から少し減ることがあります。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>令和8年（2026年）分の所得税の控除額をもとに、独身・扶養なし・会社員の場合を想定した概算です。健康保険料率は5.0%（全国平均的な水準）、介護保険料率0.8%、厚生年金保険料率9.15%、雇用保険料率0.55%で計算しています。実際の金額は加入している健康保険・住んでいる地域・各種控除によって変わります。</footer>
+</div>
+
+<script src="/common.js"></script>
+<script>
+const BRACKETS = [
+  [1949000, 0.05, 0], [3299000, 0.10, 97500], [6949000, 0.20, 427500], [8999000, 0.23, 636000],
+  [17999000, 0.33, 1536000], [39999000, 0.40, 2796000], [Infinity, 0.45, 4796000],
+];
+
+// 給与所得控除（minは最低保障額。所得税は令和8年分の特例で74万円）
+function salaryDeduction(a, min) {
+  let d;
+  if (a <= 3600000) d = a * 0.3 + 80000;
+  else if (a <= 6600000) d = a * 0.2 + 440000;
+  else if (a <= 8500000) d = a * 0.1 + 1100000;
+  else d = 1950000;
+  return Math.min(a, Math.max(min, d));
+}
+
+// 所得税の基礎控除（令和8年分、合計所得金額による）
+function basicDeduction(income) {
+  if (income <= 4890000) return 1040000;
+  if (income <= 6550000) return 670000;
+  if (income <= 23500000) return 620000;
+  if (income <= 24000000) return 480000;
+  if (income <= 24500000) return 320000;
+  if (income <= 25000000) return 160000;
+  return 0;
+}
+
+function takeHome(annual, over40) {
+  const monthly = annual / 12;
+  const pension = Math.min(monthly, 650000) * 0.0915 * 12;
+  const health = annual * (0.05 + (over40 ? 0.008 : 0));
+  const employment = annual * 0.0055;
+  const social = pension + health + employment;
+
+  const incomeIT = annual - salaryDeduction(annual, 740000);
+  const taxableIT = Math.max(0, Math.floor((incomeIT - social - basicDeduction(incomeIT)) / 1000) * 1000);
+  const [, rate, minus] = BRACKETS.find(b => taxableIT <= b[0]);
+  const incomeTax = Math.max(0, Math.floor(Math.round(taxableIT * rate - minus) * 1021 / 1000));
+
+  const incomeRT = annual - salaryDeduction(annual, 650000);
+  const taxableRT = Math.max(0, Math.floor((incomeRT - social - 430000) / 1000) * 1000);
+  const residentTax = incomeRT > 450000 ? taxableRT * 0.1 + 5000 : 0;
+
+  return { annual, social, incomeTax, residentTax, net: annual - social - incomeTax - residentTax };
+}
+
+function calc() {
+  const out = document.getElementById("result");
+  out.hidden = false;
+  const now = (Number(document.getElementById("now").value) || 0) * 10000;
+  const next = (Number(document.getElementById("next").value) || 0) * 10000;
+  if (!now || !next) { out.innerHTML = '<p class="err">両方の年収を入力してください。</p>'; return; }
+  const over40 = document.getElementById("age").value === "40";
+  const a = takeHome(now, over40), b = takeHome(next, over40);
+  const diff = b.net - a.net;
+  const sign = n => (n >= 0 ? "+" : "−") + yen(Math.abs(n));
+  const ratio = next !== now ? Math.round(diff / (next - now) * 100) : null;
+
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat ${diff >= 0 ? "good" : "warn"}"><div class="k">手取りの差（年間）</div><div class="v">${sign(diff)}</div></div>
+      <div class="stat ${diff >= 0 ? "good" : "warn"}"><div class="k">手取りの差（月あたり）</div><div class="v">${sign(diff / 12)}</div></div>
+      <div class="stat"><div class="k">年収差のうち手元に残る割合</div><div class="v">${ratio === null ? "—" : ratio + "%"}</div></div>
+    </div>
+    <table class="info">
+      <tr><th></th><th class="num">今</th><th class="num">転職後</th></tr>
+      <tr><td>年収（額面）</td><td class="num">${yen(a.annual)}</td><td class="num">${yen(b.annual)}</td></tr>
+      <tr><td>社会保険料</td><td class="num">${yen(a.social)}</td><td class="num">${yen(b.social)}</td></tr>
+      <tr><td>所得税</td><td class="num">${yen(a.incomeTax)}</td><td class="num">${yen(b.incomeTax)}</td></tr>
+      <tr><td>住民税</td><td class="num">${yen(a.residentTax)}</td><td class="num">${yen(b.residentTax)}</td></tr>
+      <tr><td><strong>手取り（年間）</strong></td><td class="num"><strong>${yen(a.net)}</strong></td><td class="num"><strong>${yen(b.net)}</strong></td></tr>
+      <tr><td>手取り（月あたり）</td><td class="num">${yen(a.net / 12)}</td><td class="num">${yen(b.net / 12)}</td></tr>
+    </table>
+    <p class="note">ボーナスの有無や回数によって、月ごとの手取りは変わります。退職金が出る場合は → <a href="/taishokukin/">退職金の手取りを計算する</a></p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+document.getElementById("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>

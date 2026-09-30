@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>退職日と社会保険料の診断ツール｜月末退職と月途中退職どっちが得？</title>
+<meta name="description" content="退職日と次の会社の入社日を入れるだけで、月ごとの健康保険・年金がどこの扱いになるかを診断。月末退職と月途中退職の違い、国民健康保険・国民年金が必要な月がひと目でわかります。">
+<link rel="canonical" href="https://harryquad.github.io/taishokubi/">
+<link rel="stylesheet" href="/common.css">
+<style>
+.tag{display:inline-block;font-size:.8rem;font-weight:700;padding:2px 8px;border-radius:999px}
+.tag.old{background:var(--accent-soft);color:var(--accent)}
+.tag.self{background:var(--warn-soft);color:var(--warn)}
+.tag.new{background:var(--good-soft);color:var(--good)}
+</style>
+</head>
+<body>
+<header class="site-header"><div><a href="/">退職・転職 お役立ちツール</a></div></header>
+<div class="wrap">
+  <h1>退職日と社会保険料の診断ツール</h1>
+  <p class="lead">退職日によって、その月の<strong>健康保険・年金</strong>を「会社で払うか」「自分で国民健康保険・国民年金を払うか」が変わります。退職日と次の入社日を入れると、月ごとにどうなるかを表示します。</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field"><label for="retire">退職日（在籍最終日）</label><input type="date" id="retire"></div>
+      <div class="field"><label for="start">次の会社の入社日</label><input type="date" id="start">
+        <div class="hint">未定なら空欄のままでOK</div></div>
+    </div>
+    <button id="calc">診断する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>退職日と社会保険のしくみ</h2>
+    <h3>なぜ退職日で保険料が変わる？</h3>
+    <p>健康保険・厚生年金は「月末の時点でどこに加入しているか」で、その月の保険料が決まります。退職すると退職日の翌日に会社の保険から抜けるので、月末に退職すると月末時点ではまだ会社の保険に入っていて、その月の保険料は会社の保険で払います。月末より前に退職すると、その月は国民健康保険・国民年金の扱いになります。</p>
+    <h3>月末退職と月途中退職、どっちが得？</h3>
+    <p>月末に退職すると、その月の保険料は会社が半分負担してくれて、厚生年金の加入期間も1ヶ月増えます（将来の年金が少し増えます）。月末の数日前に退職すると、その月は国民健康保険・国民年金を自分で全額払うことになります。すぐに次の会社に入るなら、どちらでもほぼ差はありません。</p>
+    <h3>最後の給料から保険料が2ヶ月分引かれた？</h3>
+    <p>社会保険料は「翌月の給料から前月分を引く」会社が多く、月末退職だと最後の給料から前月分と退職月分の2ヶ月分がまとめて引かれることがあります。間違いではないことがほとんどです。</p>
+    <h3>国民健康保険の代わりはある？</h3>
+    <p>退職前に2ヶ月以上加入していれば、会社の健康保険を最長2年間続けられる「任意継続」も選べます。退職日の翌日から20日以内に手続きが必要です。国民健康保険とどちらが安いかは、住んでいる地域や収入によって変わります。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>一般的な会社員（協会けんぽ・健康保険組合と厚生年金に加入）の場合の目安です。詳しくは勤務先・年金事務所・市区町村にご確認ください。</footer>
+</div>
+
+<script src="/common.js"></script>
+<script>
+const monthEnd = (y, m) => new Date(y, m + 1, 0);
+
+function calc() {
+  const out = document.getElementById("result");
+  out.hidden = false;
+  const retire = parseDate(document.getElementById("retire").value);
+  const start = parseDate(document.getElementById("start").value);
+  if (!retire) { out.innerHTML = '<p class="err">退職日を入力してください。</p>'; return; }
+  if (start && start <= retire) { out.innerHTML = '<p class="err">次の会社の入社日は、退職日より後の日付にしてください。</p>'; return; }
+
+  // 各月の月末時点で、どの保険に入っているかを判定する
+  const rows = [];
+  let selfMonths = 0;
+  const last = start ? new Date(start.getFullYear(), start.getMonth(), 1) : new Date(retire.getFullYear(), retire.getMonth() + 2, 1);
+  for (let c = new Date(retire.getFullYear(), retire.getMonth(), 1); c <= last; c = new Date(c.getFullYear(), c.getMonth() + 1, 1)) {
+    const end = monthEnd(c.getFullYear(), c.getMonth());
+    let tag;
+    if (end <= retire) tag = '<span class="tag old">前の会社の健康保険・厚生年金</span>';
+    else if (start && end >= start) tag = '<span class="tag new">新しい会社の健康保険・厚生年金</span>';
+    else { tag = '<span class="tag self">国民健康保険・国民年金（自分で支払い）</span>'; selfMonths++; }
+    rows.push(`<tr><td>${c.getFullYear()}年${c.getMonth() + 1}月</td><td>${tag}</td></tr>`);
+  }
+
+  const isMonthEnd = addDays(retire, 1).getDate() === 1;
+  const gapDays = start ? Math.round((start - retire) / 86400000) - 1 : null;
+  const advice = [];
+  if (isMonthEnd) {
+    advice.push("月末退職なので、退職した月の保険料は前の会社の保険で払います（会社が半分負担）。厚生年金の加入期間も退職月まで数えられます。");
+    advice.push("会社によっては、最後の給料から社会保険料が2ヶ月分引かれることがあります。");
+  } else {
+    const alt = monthEnd(retire.getFullYear(), retire.getMonth());
+    advice.push(`月末より前の退職なので、退職した月（${retire.getMonth() + 1}月）は前の会社の保険料がかかりません。`);
+    if (!start || start > alt) {
+      advice.push(`その代わり、${retire.getMonth() + 1}月分は国民健康保険・国民年金を自分で全額払う必要があります。退職日を${alt.getMonth() + 1}月${alt.getDate()}日（月末）にすると、会社の保険のまま半額負担で済み、厚生年金の加入期間も1ヶ月増えます。`);
+    }
+  }
+  if (start && gapDays === 0) advice.push("退職日の翌日に入社するので、保険の空白期間はありません。手続きは新しい会社がやってくれます。");
+  else if (selfMonths > 0) advice.push(`国民健康保険・国民年金の手続きは、退職日の翌日から14日以内に住んでいる市区町村の窓口で行います。会社の健康保険を続ける「任意継続」（退職日の翌日から20日以内に手続き）も選べます。`);
+  else if (start) advice.push("空白期間はありますが、どの月も月末時点では会社の保険に入っているので、国民健康保険・国民年金の保険料はかかりません（空白期間中に病院にかかる場合は、国民健康保険への加入手続きが必要です）。");
+
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat"><div class="k">退職日</div><div class="v">${isMonthEnd ? "月末退職" : "月の途中で退職"}</div></div>
+      <div class="stat ${selfMonths ? "warn" : "good"}"><div class="k">自分で払う月</div><div class="v">${start ? selfMonths + "ヶ月" : "入社まで毎月"}</div></div>
+      <div class="stat"><div class="k">空白期間</div><div class="v">${start ? gapDays + "日" : "未定"}</div></div>
+    </div>
+    <table class="info"><tr><th>月</th><th>その月の健康保険・年金</th></tr>${rows.join("")}</table>
+    ${!start ? '<p class="note">次の会社が決まるまで、毎月、国民年金（月額およそ1.7〜1.8万円）と国民健康保険（金額は収入と住んでいる地域で変わります）を自分で払う扱いになります。</p>' : ""}
+    <h2 style="margin-top:18px">ポイント</h2>
+    <ul>${advice.map(a => `<li>${a}</li>`).join("")}</ul>
+    <p class="note">退職日の前に有給を使い切るなら → <a href="/yukyu/">最終出社日を計算する</a></p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+const t = new Date();
+document.getElementById("retire").value = ymd(new Date(t.getFullYear(), t.getMonth() + 2, 0));
+document.getElementById("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>有給消化 最終出社日 計算ツール｜退職日と残り有給から自動計算</title>
+<meta name="description" content="退職日と残っている有給日数を入れるだけで、最終出社日・有給消化期間・退職届の提出目安を自動計算。土日祝・年末年始・会社独自の休日にも対応した無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/yukyu/">
+<link rel="stylesheet" href="/common.css">
+<style>
+.cals{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:14px}
+.cal h3{font-size:.95rem;margin:0 0 6px}
+.cal table{width:100%;border-collapse:collapse;font-size:.8rem;text-align:center}
+.cal th{color:var(--muted);font-weight:500;padding:2px}
+.cal td{padding:4px 0;border-radius:6px}
+.cal td.off{color:var(--off)}
+.cal td.leave{background:var(--good-soft);color:var(--good);font-weight:700}
+.cal td.lastwork{background:var(--warn-soft);color:var(--warn);font-weight:700}
+.cal td.retire{outline:2px solid var(--accent);outline-offset:-2px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.8rem;color:var(--muted);margin-top:10px}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.lg-work::before{background:var(--warn)}.lg-leave::before{background:var(--good)}.lg-retire::before{border:2px solid var(--accent);box-sizing:border-box}
+</style>
+</head>
+<body>
+<header class="site-header"><div><a href="/">退職・転職 お役立ちツール</a></div></header>
+<div class="wrap">
+  <h1>有給消化 最終出社日 計算ツール</h1>
+  <p class="lead">退職日と残りの有給日数を入れると、<strong>最終出社日</strong>と<strong>有給消化期間</strong>、<strong>退職届の提出目安</strong>を自動で計算します。祝日・振替休日にも対応しています。</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field">
+        <label for="retire">退職日（在籍最終日）</label>
+        <input type="date" id="retire">
+      </div>
+      <div class="field">
+        <label for="days">残っている有給日数</label>
+        <input type="number" id="days" min="0" max="200" step="1" value="20">
+        <div class="hint">半日単位は切り上げて入力してください</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>会社の休日</label>
+      <div class="checks">
+        <label><input type="checkbox" id="sat" checked>土曜</label>
+        <label><input type="checkbox" id="sun" checked>日曜</label>
+        <label><input type="checkbox" id="hol" checked>祝日</label>
+        <label><input type="checkbox" id="nenmatsu" checked>年末年始（12/29〜1/3）</label>
+        <label><input type="checkbox" id="obon">お盆（8/13〜8/16）</label>
+      </div>
+    </div>
+    <div class="field">
+      <label for="extra">会社独自の休日（任意）</label>
+      <input type="text" id="extra" placeholder="例：2026-11-02, 2026-12-28">
+      <div class="hint">YYYY-MM-DD 形式をカンマ区切りで入力</div>
+    </div>
+    <button id="calc">計算する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <!-- 広告・アフィリエイト枠（公開時に差し替え） -->
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>有給消化と最終出社日のよくある質問</h2>
+    <h3>最終出社日と退職日の違いは？</h3>
+    <p>最終出社日は実際に出社する最後の日、退職日は会社に在籍する最後の日です。残った有給を退職前にまとめて使うと、最終出社日の翌営業日から退職日までが有給消化期間になります。</p>
+    <h3>有給は土日や祝日にも使える？</h3>
+    <p>有給休暇は本来働く日（所定労働日）にしか使えません。そのため、このツールでは会社の休日を除いた日だけを有給の日として数えています。</p>
+    <h3>退職の申し出はいつまでにすればいい？</h3>
+    <p>期間の定めのない雇用契約なら、民法上は退職の申し出から2週間で退職できます。ただ、就業規則で「1ヶ月前まで」などと決めている会社も多く、引き継ぎもあるので、早めに相談するのが無難です。</p>
+    <h3>会社に有給消化を断られたら？</h3>
+    <p>会社には時季変更権（有給の時期をずらしてもらう権利）がありますが、退職日より後にはずらせないため、退職前の有給消化は原則として拒否できないとされています。困ったときは労働基準監督署に相談できます。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>このツールの計算結果は目安です。正確な日程は勤務先の就業規則・人事担当者にご確認ください。</footer>
+</div>
+
+<script src="/common.js"></script>
+<script>
+// 日本の祝日（2007年以降のルール。振替休日・国民の休日を含む）
+const holidayCache = {};
+function holidays(y) {
+  if (holidayCache[y]) return holidayCache[y];
+  const s = new Set();
+  const add = (m, d) => s.add(ymd(new Date(y, m - 1, d)));
+  const nthMonday = (m, n) => {
+    const first = new Date(y, m - 1, 1).getDay();
+    return 1 + ((8 - first) % 7) + (n - 1) * 7;
+  };
+  add(1, 1); add(1, nthMonday(1, 2)); add(2, 11);
+  if (y >= 2020) add(2, 23);
+  add(3, Math.floor(20.8431 + 0.242194 * (y - 1980) - Math.floor((y - 1980) / 4)));
+  add(4, 29); add(5, 3); add(5, 4); add(5, 5);
+  add(7, nthMonday(7, 3));
+  if (y >= 2016) add(8, 11);
+  add(9, nthMonday(9, 3));
+  add(9, Math.floor(23.2488 + 0.242194 * (y - 1980) - Math.floor((y - 1980) / 4)));
+  add(10, nthMonday(10, 2)); add(11, 3); add(11, 23);
+  // 国民の休日：祝日に挟まれた平日
+  for (let d = new Date(y, 0, 2); d.getFullYear() === y; d = addDays(d, 1)) {
+    if (d.getDay() !== 0 && !s.has(ymd(d)) && s.has(ymd(addDays(d, -1))) && s.has(ymd(addDays(d, 1)))) s.add(ymd(d));
+  }
+  // 振替休日：日曜の祝日の後、最初の祝日でない日
+  for (const k of [...s]) {
+    let d = parseDate(k);
+    if (d.getDay() === 0) {
+      do { d = addDays(d, 1); } while (s.has(ymd(d)));
+      s.add(ymd(d));
+    }
+  }
+  return (holidayCache[y] = s);
+}
+
+function makeIsOff(opt) {
+  return d => {
+    const w = d.getDay(), m = d.getMonth() + 1, day = d.getDate();
+    if (opt.sat && w === 6) return true;
+    if (opt.sun && w === 0) return true;
+    if (opt.hol && holidays(d.getFullYear()).has(ymd(d))) return true;
+    if (opt.nenmatsu && ((m === 12 && day >= 29) || (m === 1 && day <= 3))) return true;
+    if (opt.obon && m === 8 && day >= 13 && day <= 16) return true;
+    return opt.extra.has(ymd(d));
+  };
+}
+
+function renderCalendars(from, to, marks, isOff) {
+  let html = "";
+  for (let c = new Date(from.getFullYear(), from.getMonth(), 1); c <= to; c = new Date(c.getFullYear(), c.getMonth() + 1, 1)) {
+    html += `<div class="cal"><h3>${c.getFullYear()}年${c.getMonth() + 1}月</h3><table><tr>${WD.map(w => `<th>${w}</th>`).join("")}</tr><tr>`;
+    for (let i = 0; i < c.getDay(); i++) html += "<td></td>";
+    for (let d = new Date(c); d.getMonth() === c.getMonth(); d = addDays(d, 1)) {
+      const k = ymd(d), cls = [];
+      if (marks.leave.has(k)) cls.push("leave");
+      else if (k === marks.lastWork) cls.push("lastwork");
+      else if (isOff(d)) cls.push("off");
+      if (k === marks.retire) cls.push("retire");
+      html += `<td class="${cls.join(" ")}">${d.getDate()}</td>`;
+      if (d.getDay() === 6) html += "</tr><tr>";
+    }
+    html += "</tr></table></div>";
+  }
+  return html;
+}
+
+function calc() {
+  const out = document.getElementById("result");
+  out.hidden = false;
+  const retire = parseDate(document.getElementById("retire").value);
+  const n = Math.max(0, Math.ceil(Number(document.getElementById("days").value) || 0));
+  if (!retire) { out.innerHTML = '<p class="err">退職日を入力してください。</p>'; return; }
+  const extra = new Set(document.getElementById("extra").value.split(/[,、\s]+/).filter(Boolean).map(s => {
+    const [a, b, c] = s.split(/[-\/]/).map(Number);
+    return a && b && c ? ymd(new Date(a, b - 1, c)) : "";
+  }));
+  const opt = { extra };
+  for (const id of ["sat", "sun", "hol", "nenmatsu", "obon"]) opt[id] = document.getElementById(id).checked;
+  const isOff = makeIsOff(opt);
+
+  // 退職日から逆算して、営業日にn日の有給を割り当てる
+  const leave = [];
+  let d = retire;
+  let guard = 0;
+  while (leave.length < n && guard++ < 1000) {
+    if (!isOff(d)) leave.unshift(d);
+    d = addDays(d, -1);
+  }
+  while (isOff(d) && guard++ < 1000) d = addDays(d, -1);
+  const lastWork = d;
+  const restDays = Math.round((retire - lastWork) / 86400000);
+  const noticeLegal = addDays(retire, -14);
+  const prevMonthEnd = new Date(retire.getFullYear(), retire.getMonth(), 0).getDate();
+  const noticeRule = new Date(retire.getFullYear(), retire.getMonth() - 1, Math.min(retire.getDate(), prevMonthEnd));
+
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat warn"><div class="k">最終出社日</div><div class="v">${fmtDate(lastWork)}</div></div>
+      <div class="stat good"><div class="k">有給消化</div><div class="v">${leave.length}日</div></div>
+      <div class="stat"><div class="k">出社しない期間</div><div class="v">${restDays}日間</div></div>
+    </div>
+    <table class="info">
+      <tr><td>有給消化期間</td><td>${leave.length ? `${fmtDate(leave[0])} 〜 ${fmtDate(leave[leave.length - 1])}` : "なし"}</td></tr>
+      <tr><td>退職日（在籍最終日）</td><td>${fmtDate(retire)}</td></tr>
+      <tr><td>退職の申し出（就業規則が1ヶ月前の場合）</td><td>${fmtDate(noticeRule)} まで</td></tr>
+      <tr><td>退職の申し出（民法上の最短：2週間前）</td><td>${fmtDate(noticeLegal)} まで</td></tr>
+    </table>
+    <div class="cals">${renderCalendars(lastWork, retire, { leave: new Set(leave.map(ymd)), lastWork: ymd(lastWork), retire: ymd(retire) }, isOff)}</div>
+    <div class="legend"><span class="lg-work">最終出社日</span><span class="lg-leave">有給消化日</span><span class="lg-retire">退職日</span></div>
+    <p class="note">退職日が決まったら → <a href="/taishokutodoke/">退職届を作成する</a> ／ <a href="/taishokubi/">その退職日で社会保険料がどうなるか診断する</a></p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// 初期値：来月末
+const t = new Date();
+document.getElementById("retire").value = ymd(new Date(t.getFullYear(), t.getMonth() + 2, 0));
+document.getElementById("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>

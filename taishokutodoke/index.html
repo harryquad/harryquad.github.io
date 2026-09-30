@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>退職届・退職願 作成ツール｜縦書きテンプレートを無料で作成・印刷</title>
+<meta name="description" content="日付・氏名・会社名を入れるだけで、正しい書式の退職届・退職願を縦書きで自動作成。そのまま印刷でき、手書き用の下書きにも使える無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/taishokutodoke/">
+<link rel="stylesheet" href="/common.css">
+<style>
+.paper-wrap{overflow-x:auto;background:#e9ebef;border-radius:12px;padding:16px}
+.paper{writing-mode:vertical-rl;background:#fff;color:#111;width:560px;height:790px;margin:0 auto;padding:56px 48px;font-family:"Yu Mincho","Hiragino Mincho ProN","MS Mincho",serif;font-size:17px;line-height:2.1;box-shadow:0 1px 6px rgba(0,0,0,.15)}
+.paper p{margin:0}
+.paper .title{font-size:26px;text-align:center;letter-spacing:.4em;margin-left:1.2em}
+.paper .end{text-align:end}
+.paper .gap{margin-left:1.2em}
+.paper .to{margin-right:1.6em}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+@media print{
+  body{background:#fff}
+  body *{visibility:hidden}
+  .paper,.paper *{visibility:visible}
+  .paper{position:absolute;top:0;left:0;right:0;margin:auto;box-shadow:none;width:100%;height:auto;min-height:260mm}
+  @page{size:A4 portrait;margin:15mm}
+}
+</style>
+</head>
+<body>
+<header class="site-header"><div><a href="/">退職・転職 お役立ちツール</a></div></header>
+<div class="wrap">
+  <h1>退職届・退職願 作成ツール</h1>
+  <p class="lead">必要事項を入れるだけで、一般的な書式の<strong>退職届・退職願</strong>を縦書きで作ります。そのまま印刷することも、手書きの下書きにすることもできます。</p>
+
+  <div class="card">
+    <div class="field">
+      <label for="kind">種類</label>
+      <select id="kind">
+        <option value="todoke">退職届（退職が決まったあとに出す）</option>
+        <option value="negai">退職願（退職を願い出るときに出す）</option>
+      </select>
+    </div>
+    <div class="row">
+      <div class="field"><label for="retire">退職日</label><input type="date" id="retire"></div>
+      <div class="field"><label for="submit">提出日</label><input type="date" id="submit"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="dept">所属部署</label><input type="text" id="dept" placeholder="例：営業部 第一課"></div>
+      <div class="field"><label for="name">氏名</label><input type="text" id="name" placeholder="例：山田 太郎"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="company">会社名（正式名称）</label><input type="text" id="company" placeholder="例：株式会社サンプル"></div>
+      <div class="field"><label for="boss">代表者の役職と氏名</label><input type="text" id="boss" placeholder="例：代表取締役社長 鈴木 一郎"></div>
+    </div>
+    <div class="field">
+      <label for="reason">退職理由</label>
+      <input type="text" id="reason" value="一身上の都合">
+      <div class="hint">自己都合の退職なら「一身上の都合」とだけ書くのが一般的です</div>
+    </div>
+    <div class="field">
+      <label>日付の書き方</label>
+      <div class="checks">
+        <label><input type="radio" name="era" value="wa" checked>和暦（令和）</label>
+        <label><input type="radio" name="era" value="sei">西暦</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>プレビュー</h2>
+    <div class="paper-wrap"><div class="paper" id="paper"></div></div>
+    <div class="btns">
+      <button id="print">印刷する</button>
+      <button id="copy" class="sub">文章をコピー</button>
+    </div>
+    <p class="note">印刷するときは用紙サイズをA4（縦）にしてください。手書きで出す場合は、白い便箋に黒のボールペンか万年筆で書き写し、白い封筒に入れて表に「退職届（退職願）」と書くのが一般的です。</p>
+  </div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>退職届・退職願のよくある質問</h2>
+    <h3>退職届と退職願の違いは？</h3>
+    <p>退職願は「退職させてください」とお願いする書類で、会社が認めるまでは取り下げられることがあります。退職届は「退職します」と伝える書類で、原則として出したら取り下げられません。まず口頭か退職願で相談し、退職が決まってから退職届を出す流れが一般的です。</p>
+    <h3>退職理由は詳しく書くべき？</h3>
+    <p>自己都合の退職なら「一身上の都合」で十分です。会社都合（倒産・解雇・退職勧奨など）の場合は、失業保険の扱いが変わることがあるので「一身上の都合」とは書かず、会社に確認しましょう。</p>
+    <h3>パソコンで作っても大丈夫？</h3>
+    <p>法律上の決まりはないので、パソコンで作って印刷したものでも問題ありません。会社に決まった書式がある場合はそちらを使ってください。</p>
+    <h3>宛名は誰にすればいい？</h3>
+    <p>直属の上司ではなく、会社の最高責任者（代表取締役など）宛てにするのが一般的です。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>作成した文書は一般的な書式の例です。会社に指定の書式がある場合はそちらに従ってください。</footer>
+</div>
+
+<script src="/common.js"></script>
+<script>
+const KAN = "〇一二三四五六七八九";
+function kanji(n) {
+  if (n < 10) return KAN[n];
+  if (n < 100) return (n >= 20 ? KAN[Math.floor(n / 10)] : "") + "十" + (n % 10 ? KAN[n % 10] : "");
+  return String(n).split("").map(c => KAN[c]).join("");
+}
+function jdate(d, era) {
+  if (!d) return "　　年　　月　　日";
+  const y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
+  if (era === "sei") return `${kanji(y)}年${kanji(m)}月${kanji(day)}日`;
+  const r = y - 2018;
+  return `令和${r === 1 ? "元" : kanji(r)}年${kanji(m)}月${kanji(day)}日`;
+}
+const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const val = id => document.getElementById(id).value.trim();
+
+function build() {
+  const kind = val("kind");
+  const era = document.querySelector("input[name=era]:checked").value;
+  const retire = jdate(parseDate(val("retire")), era);
+  const submit = jdate(parseDate(val("submit")), era);
+  const reason = val("reason") || "一身上の都合";
+  const title = kind === "negai" ? "退職願" : "退職届";
+  const body = kind === "negai"
+    ? `このたび、${reason}により、勝手ながら、${retire}をもって退職いたしたく、ここにお願い申し上げます。`
+    : `このたび、${reason}により、来たる${retire}をもって退職いたします。`;
+  const lines = {
+    title, body, submit,
+    dept: val("dept") || "〇〇部",
+    name: val("name") || "氏名",
+    company: val("company") || "株式会社〇〇",
+    boss: val("boss") || "代表取締役社長 〇〇〇〇",
+  };
+  document.getElementById("paper").innerHTML = `
+    <p class="title">${title}</p>
+    <p class="end">私儀</p>
+    <p class="gap">${esc(body)}</p>
+    <p>${submit}</p>
+    <p class="end">${esc(lines.dept)}</p>
+    <p class="end gap">${esc(lines.name)}　印</p>
+    <p class="to">${esc(lines.company)}</p>
+    <p class="to">${esc(lines.boss)}　殿</p>`;
+  return lines;
+}
+
+function plainText() {
+  const l = build();
+  return `${l.title}\n\n私儀\n${l.body}\n\n${l.submit}\n${l.dept}\n${l.name}　印\n\n${l.company}\n${l.boss}　殿`;
+}
+
+const today = new Date();
+document.getElementById("submit").value = ymd(today);
+document.getElementById("retire").value = ymd(new Date(today.getFullYear(), today.getMonth() + 2, 0));
+document.querySelectorAll("input,select").forEach(e => e.addEventListener("input", build));
+document.getElementById("print").addEventListener("click", () => { build(); window.print(); });
+document.getElementById("copy").addEventListener("click", async e => {
+  try { await navigator.clipboard.writeText(plainText()); e.target.textContent = "コピーしました"; }
+  catch { e.target.textContent = "コピーできませんでした"; }
+  setTimeout(() => (e.target.textContent = "文章をコピー"), 2000);
+});
+build();
+</script>
+</body>
+</html>
