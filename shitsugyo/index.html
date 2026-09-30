@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>失業保険（失業手当）受給額 計算ツール｜2026年8月改定対応</title>
+<meta name="description" content="年齢・給料・加入期間・退職理由を入れるだけで、失業保険（雇用保険の基本手当）の1日あたりの金額、もらえる日数、総額、振り込みまでの目安を計算。2026年8月1日改定の金額に対応した無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/shitsugyo/">
+<link rel="stylesheet" href="/common.css">
+</head>
+<body>
+<header class="site-header"><div><a href="/">退職・転職 お役立ちツール</a></div></header>
+<div class="wrap">
+  <h1>失業保険（失業手当）受給額 計算ツール</h1>
+  <p class="lead">年齢・退職前の給料・雇用保険の加入期間・退職理由から、<strong>1日あたりの金額</strong>、<strong>もらえる日数</strong>、<strong>総額</strong>を計算します。<strong>2026年8月1日改定</strong>の金額に対応しています。</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field"><label for="age">退職日の年齢</label><input type="number" id="age" min="15" max="64" value="35"></div>
+      <div class="field"><label for="salary">退職前6ヶ月の平均月給</label><input type="number" id="salary" min="0" value="30">
+        <div class="hint">万円単位。残業代・通勤手当を含み、ボーナスは除く（額面）</div></div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label for="years">雇用保険に入っていた期間</label>
+        <select id="years">
+          <option value="0">1年未満</option>
+          <option value="1">1年以上 5年未満</option>
+          <option value="5" selected>5年以上 10年未満</option>
+          <option value="10">10年以上 20年未満</option>
+          <option value="20">20年以上</option>
+        </select>
+        <div class="hint">前の会社の期間も、空白が1年以内なら通算できます</div>
+      </div>
+      <div class="field">
+        <label for="reason">退職の理由</label>
+        <select id="reason">
+          <option value="self">自己都合（転職・結婚・引っ越しなど）</option>
+          <option value="company">会社都合（倒産・解雇・退職勧奨など）</option>
+        </select>
+      </div>
+    </div>
+    <button id="calc">計算する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>失業保険のよくある質問</h2>
+    <h3>1日あたりの金額（基本手当日額）はどう決まる？</h3>
+    <p>退職前6ヶ月の給料の合計（ボーナスを除く）を180で割った「賃金日額」に、45〜80%をかけた金額です。給料が低い人ほど高い割合になります。年齢ごとに上限額があり、2026年8月1日からは30歳未満7,450円、30〜44歳8,270円、45〜59歳9,110円、60〜64歳7,830円です。下限額は2,562円です。</p>
+    <h3>自己都合だとすぐにもらえない？</h3>
+    <p>ハローワークで手続きしたあと、まず7日間の待期期間があります。自己都合の場合は、さらに原則1ヶ月の給付制限期間があり、その間は支給されません（2025年4月に2ヶ月から1ヶ月に短縮されました）。5年間で3回以上自己都合で辞めている場合は3ヶ月になります。</p>
+    <h3>もらえる条件は？</h3>
+    <p>働く意思と能力があり、求職活動をしていることが前提です。加入期間は、自己都合なら退職前2年間に通算12ヶ月以上、会社都合なら退職前1年間に通算6ヶ月以上必要です。</p>
+    <h3>もらえるのはいつまで？</h3>
+    <p>受け取れる期間は、原則として退職日の翌日から1年間です。手続きが遅れると、もらえる日数が残っていても1年を過ぎた分は受け取れないので、退職したら早めにハローワークへ行きましょう。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>厚生労働省が公表している2026年8月1日以降の基本手当日額の計算式をもとにした概算です。障害などで就職が難しい方（就職困難者）や65歳以上の方は計算方法が異なります。正確な金額はハローワークでご確認ください。</footer>
+</div>
+
+<script src="/common.js"></script>
+<script>
+// 2026年8月1日〜の基本手当日額（厚生労働省「基本手当日額の計算式及び金額」）
+const LOWER_W = 3203, LOWER_Y = 2562;
+const AGE_BANDS = [
+  { max: 29, capW: 14900, capY: 7450 },
+  { max: 44, capW: 16540, capY: 8270 },
+  { max: 59, capW: 18220, capY: 9110 },
+  { max: 64, capW: 17400, capY: 7830 },
+];
+
+function dailyBenefit(w, age) {
+  const band = AGE_BANDS.find(b => age <= b.max);
+  if (w < LOWER_W) return { y: LOWER_Y, band };
+  if (w > band.capW) return { y: band.capY, band };
+  let y;
+  if (age >= 60) {
+    if (w < 5480) y = 0.8 * w;
+    else if (w <= 12120) y = Math.min(0.8 * w - 0.35 * ((w - 5480) / (12120 - 5480)) * w, 0.05 * w + 12120 * 0.4);
+    else y = 0.45 * w;
+  } else {
+    if (w < 5480) y = 0.8 * w;
+    else if (w <= 13490) y = 0.8 * w - 0.3 * ((w - 5480) / (13490 - 5480)) * w;
+    else y = 0.5 * w;
+  }
+  return { y: Math.floor(y), band };
+}
+
+// 所定給付日数。列は加入期間 [1年未満, 1〜5年, 5〜10年, 10〜20年, 20年以上]
+const YEAR_COL = { 0: 0, 1: 1, 5: 2, 10: 3, 20: 4 };
+function benefitDays(age, years, reason) {
+  const col = YEAR_COL[years];
+  if (reason === "self") return [null, 90, 90, 120, 150][col];
+  const table = age < 30 ? [90, 90, 120, 180, 180]
+    : age < 35 ? [90, 120, 180, 210, 240]
+    : age < 45 ? [90, 150, 180, 240, 270]
+    : age < 60 ? [90, 180, 240, 270, 330]
+    : [90, 150, 180, 210, 240];
+  return table[col];
+}
+
+function calc() {
+  const out = document.getElementById("result");
+  out.hidden = false;
+  const age = Math.floor(Number(document.getElementById("age").value) || 0);
+  const monthly = (Number(document.getElementById("salary").value) || 0) * 10000;
+  const years = Number(document.getElementById("years").value);
+  const reason = document.getElementById("reason").value;
+  if (age < 15 || age > 64) { out.innerHTML = '<p class="err">年齢は15〜64歳で入力してください（65歳以上は「高年齢求職者給付金」という別の制度になります）。</p>'; return; }
+  if (!monthly) { out.innerHTML = '<p class="err">平均月給を入力してください。</p>'; return; }
+
+  const days = benefitDays(age, years, reason);
+  if (days === null) {
+    out.innerHTML = `<p class="err">自己都合の退職で加入期間が1年未満の場合、原則として失業保険は受け取れません。</p>
+      <p class="note">退職前2年間に、前の会社も含めて通算12ヶ月以上の加入期間があれば受け取れます。1年以内に転職している場合は、前の会社の期間も足して確認してみてください。</p>`;
+    return;
+  }
+
+  const w = Math.floor(monthly * 6 / 180);
+  const { y, band } = dailyBenefit(w, age);
+  const rate = Math.round(y / w * 100);
+  const total = y * days;
+  const capped = w > band.capW;
+  const waitText = reason === "self"
+    ? "手続き後、7日間の待期期間＋1ヶ月の給付制限のあと支給開始。初回の振り込みは手続きからおよそ1ヶ月半〜2ヶ月後が目安です。"
+    : "手続き後、7日間の待期期間のあと支給開始（給付制限なし）。初回の振り込みは手続きからおよそ1ヶ月後が目安です。";
+
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat good"><div class="k">もらえる総額（目安）</div><div class="v">${yen(total)}</div></div>
+      <div class="stat"><div class="k">1日あたり</div><div class="v">${yen(y)}</div></div>
+      <div class="stat"><div class="k">もらえる日数</div><div class="v">${days}日</div></div>
+    </div>
+    <table class="info">
+      <tr><td>賃金日額（6ヶ月の給料 ÷ 180）</td><td class="num">${yen(w)}</td></tr>
+      <tr><td>基本手当日額</td><td class="num">${yen(y)}（賃金日額の約${rate}%）</td></tr>
+      <tr><td>4週間（28日）ごとの振り込み額</td><td class="num">${yen(y * 28)}</td></tr>
+      <tr><td>もらえる日数（所定給付日数）</td><td class="num">${days}日</td></tr>
+      <tr><td>総額</td><td class="num">${yen(total)}</td></tr>
+    </table>
+    ${capped ? `<p class="note">給料が高いため、年齢ごとの上限額（${yen(band.capY)}）が適用されています。</p>` : ""}
+    <p class="note">${waitText}失業保険は非課税なので、税金は引かれません。</p>
+    <p class="note">退職日によって健康保険・年金の扱いも変わります → <a href="/taishokubi/">退職日と社会保険料を診断する</a></p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+document.getElementById("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>

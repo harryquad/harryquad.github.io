@@ -6,6 +6,7 @@ const TOOLS = [
   { path: "/taishokubi/", name: "退職日と社会保険料の診断", desc: "月末退職と月途中退職で保険料がどう変わるか" },
   { path: "/tedori-hikaku/", name: "転職後の手取り比較", desc: "年収が変わると手取りはいくら変わるか" },
   { path: "/kinzoku/", name: "勤続年数 計算", desc: "在籍期間と有給の付与日数の目安を計算" },
+  { path: "/shitsugyo/", name: "失業保険 受給額 計算", desc: "失業手当の1日あたりの額・日数・総額を計算（2026年8月改定対応）" },
 ];
 
 const pad = n => String(n).padStart(2, "0");
