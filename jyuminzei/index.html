@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>退職後の住民税 計算ツール｜いつ・いくら払う？一括徴収と普通徴収</title>
+<meta name="description" content="退職月と毎月の住民税額を入れるだけで、退職後に払う住民税の残り（一括徴収か普通徴収か）と、翌年度の住民税の目安を計算。退職後に届く住民税の請求に慌てないための無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/jyuminzei/">
+<link rel="stylesheet" href="/common.css">
+</head>
+<body>
+<header class="site-header"><div><a href="/">退職・転職 お役立ちツール</a></div></header>
+<div class="wrap">
+  <h1>退職後の住民税 計算ツール</h1>
+  <p class="lead">住民税は<strong>前の年の収入</strong>に対してかかるので、退職して収入がなくなっても請求が来ます。退職月と今の住民税額から、<strong>退職後に払う残りの住民税</strong>と<strong>翌年度の住民税の目安</strong>を計算します。</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field"><label for="retire">退職日</label><input type="date" id="retire"></div>
+      <div class="field"><label for="monthly">今、給料から引かれている住民税（月額）</label><input type="number" id="monthly" min="0" value="20000">
+        <div class="hint">円単位。給与明細の「住民税」欄の金額</div></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="income">退職した年の1月〜退職日までの給与総額</label><input type="number" id="income" min="0" value="300">
+        <div class="hint">万円単位（ボーナス込み・額面）。翌年度の住民税の計算に使います</div></div>
+      <div class="field">
+        <label for="next">退職した年のうちに再就職する？</label>
+        <select id="next">
+          <option value="no">しない（または未定）</option>
+          <option value="yes">する</option>
+        </select>
+      </div>
+    </div>
+    <div class="field" id="nextIncomeField" hidden>
+      <label for="nextIncome">再就職後、その年の12月までにもらう給与の見込み</label>
+      <input type="number" id="nextIncome" min="0" value="0">
+      <div class="hint">万円単位（額面）</div>
+    </div>
+    <button id="calc">計算する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>退職後の住民税のしくみ</h2>
+    <h3>なぜ退職後も住民税を払う？</h3>
+    <p>住民税は「前の年（1〜12月）の収入」をもとに計算され、その年の6月から翌年5月までの12回に分けて払います。会社員は給料から毎月引かれています（特別徴収）が、退職すると引けなくなるので、残りを自分で払う（普通徴収）か、最後の給料からまとめて引かれる（一括徴収）ことになります。</p>
+    <h3>1〜4月に退職するとどうなる？</h3>
+    <p>1月1日〜4月30日に退職すると、5月分までの残りの住民税は、原則として最後の給料や退職金からまとめて引かれます（一括徴収）。最後の給料の手取りが大きく減るので注意してください。</p>
+    <h3>6〜12月に退職するとどうなる？</h3>
+    <p>6月1日〜12月31日に退職すると、残りの住民税は、後日市区町村から届く納付書で自分で払うのが原則です（普通徴収）。会社に申し出れば、最後の給料からまとめて引いてもらうこともできます。すぐに再就職する場合は、新しい会社で引き続き給料から引いてもらえることもあります。</p>
+    <h3>退職した翌年の住民税は？</h3>
+    <p>退職した年に受け取った給料をもとに、翌年6月から翌々年5月までの住民税が決まります。年の途中で退職して収入が減っていれば、翌年度の住民税は少なくなります。再就職していない場合は、6月ごろに納付書が届き、年4回（6月・8月・10月・翌年1月）に分けて払うのが一般的です。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>一般的な会社員（独身・扶養なし）を想定した概算です。住民税の正確な金額や納付方法は、お住まいの市区町村・勤務先にご確認ください。</footer>
+</div>
+
+<script src="/common.js"></script>
+<script src="/tax.js"></script>
+<script>
+document.getElementById("next").addEventListener("change", e => {
+  document.getElementById("nextIncomeField").hidden = e.target.value !== "yes";
+});
+
+function calc() {
+  const out = document.getElementById("result");
+  out.hidden = false;
+  const retire = parseDate(document.getElementById("retire").value);
+  const monthly = Math.max(0, Number(document.getElementById("monthly").value) || 0);
+  const income = Math.max(0, Number(document.getElementById("income").value) || 0) * 10000;
+  const rehired = document.getElementById("next").value === "yes";
+  const later = rehired ? Math.max(0, Number(document.getElementById("nextIncome").value) || 0) * 10000 : 0;
+  if (!retire) { out.innerHTML = '<p class="err">退職日を入力してください。</p>'; return; }
+
+  // 退職月の住民税は最後の給料から引かれる前提で、翌月〜5月分が残りになる
+  const m = retire.getMonth() + 1, y = retire.getFullYear();
+  const remaining = m <= 5 ? 5 - m : 17 - m;
+  const fyEnd = m <= 5 ? y : y + 1;
+  const rest = remaining * monthly;
+  let how;
+  if (remaining === 0) how = "5月で今年度の住民税が終わるので、退職後に払う残りはありません。";
+  else if (m <= 4) how = `1〜4月の退職なので、${m + 1}月〜5月分の <strong>${yen(rest)}</strong> は、原則として<strong>最後の給料（または退職金）からまとめて引かれます</strong>（一括徴収）。最後の給料の手取りがその分減ります。`;
+  else how = `6〜12月の退職なので、${m === 12 ? "翌年1月" : m + 1 + "月"}〜${fyEnd}年5月分の <strong>${yen(rest)}</strong> は、後日届く<strong>納付書で自分で払う</strong>のが原則です（普通徴収）。会社に申し出れば、最後の給料からまとめて引いてもらうこともできます。${rehired ? "年内に再就職するなら、新しい会社で給料から引き続き引いてもらえる場合もあります。" : ""}`;
+
+  // 翌年度の住民税の目安（退職した年の給与をもとに計算）
+  const total = income + later;
+  const monthsWorked = Math.max(1, m + (rehired ? 12 - m : 0));
+  const social = socialInsurance(total, false, monthsWorked).total;
+  const nextTax = residentTaxOf(total, social);
+
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat warn"><div class="k">退職後に払う残り（今年度分）</div><div class="v">${yen(rest)}</div></div>
+      <div class="stat"><div class="k">残りの月数</div><div class="v">${remaining}ヶ月分</div></div>
+      <div class="stat"><div class="k">翌年度の住民税（目安）</div><div class="v">${yen(nextTax)}</div></div>
+    </div>
+    <h2>今年度（${fyEnd}年5月まで）の残り</h2>
+    <p>${how}</p>
+    <h2 style="margin-top:18px">翌年度（${y + 1}年6月〜${y + 2}年5月）の住民税</h2>
+    <table class="info">
+      <tr><td>${y}年の給与収入（額面）</td><td class="num">${yen(total)}</td></tr>
+      <tr><td>翌年度の住民税（年額・目安）</td><td class="num">${yen(nextTax)}</td></tr>
+      <tr><td>${rehired ? "給料から引かれる場合の月額" : "納付書で年4回払う場合の1回分"}</td><td class="num">${yen(nextTax / (rehired ? 12 : 4))}</td></tr>
+    </table>
+    ${nextTax === 0 ? '<p class="note">収入が少ないため、翌年度の住民税はかからない見込みです（住んでいる地域によって基準が少し違います）。</p>' : ""}
+    <p class="note">退職後は住民税のほかに、国民健康保険・国民年金の支払いが必要になることもあります → <a href="/taishokubi/">退職日と社会保険料を診断する</a></p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+const t = new Date();
+document.getElementById("retire").value = ymd(new Date(t.getFullYear(), t.getMonth() + 2, 0));
+document.getElementById("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>

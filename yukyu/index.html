@@ -82,40 +82,6 @@
 
 <script src="/common.js"></script>
 <script>
-// 日本の祝日（2007年以降のルール。振替休日・国民の休日を含む）
-const holidayCache = {};
-function holidays(y) {
-  if (holidayCache[y]) return holidayCache[y];
-  const s = new Set();
-  const add = (m, d) => s.add(ymd(new Date(y, m - 1, d)));
-  const nthMonday = (m, n) => {
-    const first = new Date(y, m - 1, 1).getDay();
-    return 1 + ((8 - first) % 7) + (n - 1) * 7;
-  };
-  add(1, 1); add(1, nthMonday(1, 2)); add(2, 11);
-  if (y >= 2020) add(2, 23);
-  add(3, Math.floor(20.8431 + 0.242194 * (y - 1980) - Math.floor((y - 1980) / 4)));
-  add(4, 29); add(5, 3); add(5, 4); add(5, 5);
-  add(7, nthMonday(7, 3));
-  if (y >= 2016) add(8, 11);
-  add(9, nthMonday(9, 3));
-  add(9, Math.floor(23.2488 + 0.242194 * (y - 1980) - Math.floor((y - 1980) / 4)));
-  add(10, nthMonday(10, 2)); add(11, 3); add(11, 23);
-  // 国民の休日：祝日に挟まれた平日
-  for (let d = new Date(y, 0, 2); d.getFullYear() === y; d = addDays(d, 1)) {
-    if (d.getDay() !== 0 && !s.has(ymd(d)) && s.has(ymd(addDays(d, -1))) && s.has(ymd(addDays(d, 1)))) s.add(ymd(d));
-  }
-  // 振替休日：日曜の祝日の後、最初の祝日でない日
-  for (const k of [...s]) {
-    let d = parseDate(k);
-    if (d.getDay() === 0) {
-      do { d = addDays(d, 1); } while (s.has(ymd(d)));
-      s.add(ymd(d));
-    }
-  }
-  return (holidayCache[y] = s);
-}
-
 function makeIsOff(opt) {
   return d => {
     const w = d.getDay(), m = d.getMonth() + 1, day = d.getDate();

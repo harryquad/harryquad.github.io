@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>年収 時給換算ツール｜今の会社と転職先の「本当の時給」を比較</title>
+<meta name="description" content="年収・年間休日・1日の労働時間・残業時間・通勤時間から「本当の時給」を計算し、今の会社と転職先を比較。年収が高くても休みが少ない・残業が多い会社は時給が低いこともわかる無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/jikyu/">
+<link rel="stylesheet" href="/common.css">
+<style>
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:520px){.cols{grid-template-columns:1fr}}
+.cols h3{font-size:1rem;margin:0 0 10px}
+</style>
+</head>
+<body>
+<header class="site-header"><div><a href="/">退職・転職 お役立ちツール</a></div></header>
+<div class="wrap">
+  <h1>年収 時給換算ツール</h1>
+  <p class="lead">年収だけでは、会社の本当の待遇はわかりません。<strong>休日・労働時間・残業・通勤時間</strong>まで含めた<strong>「本当の時給」</strong>を計算して、今の会社と転職先を比べます。</p>
+
+  <div class="card">
+    <div class="cols">
+      <div id="colA"><h3>今の会社</h3></div>
+      <div id="colB"><h3>転職先</h3></div>
+    </div>
+    <button id="calc">比較する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>時給換算についてよくある質問</h2>
+    <h3>年間休日の平均は？</h3>
+    <p>完全週休2日制に祝日と年末年始・夏季休暇を加えると、年間休日はおよそ120〜125日です。年間休日105日の会社と125日の会社では、働く日数に年20日の差があります。</p>
+    <h3>「拘束時間ベースの時給」とは？</h3>
+    <p>働いている時間に加えて、通勤時間も含めて計算した時給です。通勤も仕事のために使っている時間なので、片道1時間の通勤があると、実際の時給はかなり下がります。</p>
+    <h3>残業代が出る場合は？</h3>
+    <p>残業代が出るなら、その分を含めた年収を入れてください。残業代が出ない（固定残業代やみなし残業を含む）場合は、年収はそのままで残業時間を入れると、残業によって時給がどれだけ下がるかがわかります。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>入力した条件にもとづく単純な計算です。有給休暇の取得日数や、会社ごとの福利厚生は含めていません。</footer>
+</div>
+
+<script src="/common.js"></script>
+<script>
+const FIELDS = [
+  ["annual", "年収（額面）", "万円", 450, 550],
+  ["holidays", "年間休日", "日", 120, 110],
+  ["hours", "1日の所定労働時間", "時間", 8, 8],
+  ["overtime", "月の平均残業時間", "時間", 20, 30],
+  ["commute", "通勤時間（片道）", "分", 45, 30],
+];
+for (const [side, i] of [["A", 3], ["B", 4]]) {
+  document.getElementById("col" + side).insertAdjacentHTML("beforeend", FIELDS.map(f =>
+    `<div class="field"><label for="${f[0]}${side}">${f[1]}（${f[2]}）</label><input type="number" id="${f[0]}${side}" min="0" value="${f[i]}"></div>`).join(""));
+}
+
+function hourly(side) {
+  const v = k => Math.max(0, Number(document.getElementById(k + side).value) || 0);
+  const annual = v("annual") * 10000;
+  const days = Math.max(0, 365 - v("holidays"));
+  const workHours = days * v("hours") + v("overtime") * 12;
+  const commuteHours = days * v("commute") * 2 / 60;
+  return {
+    annual, days, workHours, commuteHours,
+    wage: workHours ? annual / workHours : 0,
+    wageAll: workHours + commuteHours ? annual / (workHours + commuteHours) : 0,
+  };
+}
+
+function calc() {
+  const out = document.getElementById("result");
+  out.hidden = false;
+  const a = hourly("A"), b = hourly("B");
+  if (!a.annual || !b.annual || !a.workHours || !b.workHours) { out.innerHTML = '<p class="err">年収と労働時間を入力してください。</p>'; return; }
+  const diff = b.wage - a.wage;
+  const pct = (diff / a.wage * 100).toFixed(1);
+  const h = n => Math.round(n).toLocaleString("ja-JP") + "時間";
+  const annualPct = ((b.annual - a.annual) / a.annual * 100).toFixed(1);
+  let msg;
+  if (b.annual > a.annual && diff < 0) msg = "年収は上がりますが、働く時間も増えるため、<strong>時給で見ると下がります</strong>。";
+  else if (b.annual < a.annual && diff > 0) msg = "年収は下がりますが、働く時間が減るため、<strong>時給で見ると上がります</strong>。";
+  else msg = diff >= 0 ? "時給で見ても、転職先のほうが条件が良くなります。" : "時給で見ると、今の会社のほうが条件が良いです。";
+
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat"><div class="k">今の会社の時給</div><div class="v">${yen(a.wage)}</div></div>
+      <div class="stat"><div class="k">転職先の時給</div><div class="v">${yen(b.wage)}</div></div>
+      <div class="stat ${diff >= 0 ? "good" : "warn"}"><div class="k">時給の差</div><div class="v">${diff >= 0 ? "+" : "−"}${yen(Math.abs(diff))}（${diff >= 0 ? "+" : ""}${pct}%）</div></div>
+    </div>
+    <p>${msg}（年収の変化：${annualPct > 0 ? "+" : ""}${annualPct}%）</p>
+    <table class="info">
+      <tr><th></th><th class="num">今の会社</th><th class="num">転職先</th></tr>
+      <tr><td>年収</td><td class="num">${yen(a.annual)}</td><td class="num">${yen(b.annual)}</td></tr>
+      <tr><td>年間の出勤日数</td><td class="num">${a.days}日</td><td class="num">${b.days}日</td></tr>
+      <tr><td>年間の労働時間（残業込み）</td><td class="num">${h(a.workHours)}</td><td class="num">${h(b.workHours)}</td></tr>
+      <tr><td>年間の通勤時間</td><td class="num">${h(a.commuteHours)}</td><td class="num">${h(b.commuteHours)}</td></tr>
+      <tr><td><strong>時給（労働時間ベース）</strong></td><td class="num"><strong>${yen(a.wage)}</strong></td><td class="num"><strong>${yen(b.wage)}</strong></td></tr>
+      <tr><td>時給（通勤時間も含めた拘束時間ベース）</td><td class="num">${yen(a.wageAll)}</td><td class="num">${yen(b.wageAll)}</td></tr>
+    </table>
+    <p class="note">額面の時給です。手取りで比べたい場合は → <a href="/tedori-hikaku/">転職後の手取りを比較する</a></p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+document.getElementById("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>

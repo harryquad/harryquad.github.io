@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>再就職手当 計算ツール｜いくらもらえる？2026年8月改定対応</title>
+<meta name="description" content="失業保険をもらっている途中で再就職したときの「再就職手当」がいくらになるかを計算。支給残日数と基本手当日額から、支給率（70%・60%）と金額、いつまでに就職すればいくらかを一覧で表示します。2026年8月改定の上限額に対応。">
+<link rel="canonical" href="https://harryquad.github.io/saishushoku/">
+<link rel="stylesheet" href="/common.css">
+</head>
+<body>
+<header class="site-header"><div><a href="/">退職・転職 お役立ちツール</a></div></header>
+<div class="wrap">
+  <h1>再就職手当 計算ツール</h1>
+  <p class="lead">失業保険（基本手当）の日数を多く残して早く再就職すると、<strong>再就職手当</strong>がまとめて受け取れます。支給残日数と基本手当日額から、<strong>いくらもらえるか</strong>を計算します。2026年8月改定の上限額に対応しています。</p>
+
+  <div class="card">
+    <div class="field">
+      <label>基本手当日額</label>
+      <div class="checks">
+        <label><input type="radio" name="mode" value="known" checked>わかる（受給資格者証に書いてある）</label>
+        <label><input type="radio" name="mode" value="calc">わからない（給料から計算する）</label>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field" id="knownField"><label for="daily">基本手当日額</label><input type="number" id="daily" min="0" value="6000">
+        <div class="hint">円単位</div></div>
+      <div class="field" id="salaryField" hidden><label for="salary">退職前6ヶ月の平均月給</label><input type="number" id="salary" min="0" value="30">
+        <div class="hint">万円単位（ボーナスを除く額面）</div></div>
+      <div class="field"><label for="age">退職日の年齢</label><input type="number" id="age" min="15" max="64" value="35"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="total">所定給付日数</label>
+        <select id="total">
+          <option>90</option><option>120</option><option>150</option><option>180</option><option>210</option><option>240</option><option>270</option><option>300</option><option>330</option><option>360</option>
+        </select>
+        <div class="hint">わからない場合は <a href="/shitsugyo/">失業保険の計算</a> で確認できます</div></div>
+      <div class="field"><label for="usedDays">すでに受け取った日数</label><input type="number" id="usedDays" min="0" value="0">
+        <div class="hint">就職日の前日までに支給された（される）日数</div></div>
+    </div>
+    <button id="calc">計算する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>再就職手当のよくある質問</h2>
+    <h3>再就職手当の計算方法は？</h3>
+    <p>「基本手当日額 × 支給残日数 × 支給率」です。支給残日数が所定給付日数の3分の2以上なら70%、3分の1以上なら60%です。基本手当日額には上限があり、2026年8月1日からは60歳未満6,745円、60〜64歳5,454円です。</p>
+    <h3>もらうための主な条件は？</h3>
+    <p>7日間の待期期間が終わってから就職していること、支給残日数が3分の1以上あること、1年を超えて働く見込みがあること、前の会社への再就職ではないことなどです。自己都合退職で給付制限がある場合、待期期間の後の1ヶ月間は、ハローワークか職業紹介事業者の紹介で就職した場合に限られます。</p>
+    <h3>いつ振り込まれる？</h3>
+    <p>就職日の翌日から1ヶ月以内にハローワークへ申請し、審査のあと、申請からおよそ1ヶ月〜1ヶ月半で振り込まれるのが一般的です。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>厚生労働省が公表している2026年8月1日以降の金額をもとにした概算です。支給されるかどうか・正確な金額はハローワークでご確認ください。</footer>
+</div>
+
+<script src="/common.js"></script>
+<script src="/koyo.js"></script>
+<script>
+document.querySelectorAll("input[name=mode]").forEach(r => r.addEventListener("change", () => {
+  const known = document.querySelector("input[name=mode]:checked").value === "known";
+  document.getElementById("knownField").hidden = !known;
+  document.getElementById("salaryField").hidden = known;
+}));
+
+const amountFor = (y, remain, total) => {
+  const pct = remain * 3 >= total * 2 ? 70 : remain * 3 >= total ? 60 : 0;
+  return { rate: pct / 100, amount: Math.floor(y * remain * pct / 100) };
+};
+
+function calc() {
+  const out = document.getElementById("result");
+  out.hidden = false;
+  const age = Math.floor(Number(document.getElementById("age").value) || 0);
+  if (age < 15 || age > 64) { out.innerHTML = '<p class="err">年齢は15〜64歳で入力してください。</p>'; return; }
+  const known = document.querySelector("input[name=mode]:checked").value === "known";
+  let daily;
+  if (known) daily = Math.floor(Number(document.getElementById("daily").value) || 0);
+  else daily = dailyBenefit(Math.floor((Number(document.getElementById("salary").value) || 0) * 10000 * 6 / 180), age).y;
+  if (!daily) { out.innerHTML = '<p class="err">基本手当日額（または月給）を入力してください。</p>'; return; }
+  const total = Number(document.getElementById("total").value);
+  const used = Math.max(0, Math.floor(Number(document.getElementById("usedDays").value) || 0));
+  const remain = Math.max(0, total - used);
+  const cap = age >= 60 ? REEMPLOY_CAP.over60 : REEMPLOY_CAP.under60;
+  const y = Math.min(daily, cap);
+  const r = amountFor(y, remain, total);
+
+  // 受け取った日数ごとの早見表
+  const t70 = total - Math.ceil(total * 2 / 3), t60 = total - Math.ceil(total / 3);
+  const steps = [...new Set([0, Math.floor(t70 / 2), t70, t70 + 1, Math.floor((t70 + t60) / 2), t60, t60 + 1])].filter(n => n <= total);
+  const rows = steps.map(n => {
+    const x = amountFor(y, total - n, total);
+    return `<tr><td>${n}日受け取った後</td><td class="num">${total - n}日</td><td class="num">${x.rate ? Math.round(x.rate * 100) + "%" : "対象外"}</td><td class="num">${x.rate ? yen(x.amount) : "—"}</td></tr>`;
+  });
+
+  out.innerHTML = r.rate ? `
+    <div class="big">
+      <div class="stat good"><div class="k">再就職手当（目安）</div><div class="v">${yen(r.amount)}</div></div>
+      <div class="stat"><div class="k">支給率</div><div class="v">${Math.round(r.rate * 100)}%</div></div>
+      <div class="stat"><div class="k">支給残日数</div><div class="v">${remain}日</div></div>
+    </div>` : `<p class="err">支給残日数が所定給付日数の3分の1（${Math.ceil(total / 3)}日）未満のため、再就職手当の対象外です。</p>`;
+  out.innerHTML += `
+    <table class="info">
+      <tr><td>基本手当日額</td><td class="num">${yen(daily)}</td></tr>
+      <tr><td>計算に使う日額（上限 ${yen(cap)}）</td><td class="num">${yen(y)}</td></tr>
+      <tr><td>計算式</td><td class="num">${yen(y)} × ${remain}日 × ${Math.round(r.rate * 100)}%</td></tr>
+    </table>
+    <h2 style="margin-top:18px">いつ就職すると、いくら？（所定給付日数${total}日の場合）</h2>
+    <div style="overflow-x:auto"><table class="info"><tr><th>就職のタイミング</th><th class="num">残日数</th><th class="num">支給率</th><th class="num">再就職手当</th></tr>${rows.join("")}</table></div>
+    <p class="note">残日数が${Math.ceil(total * 2 / 3)}日以上なら70%、${Math.ceil(total / 3)}日以上なら60%です。70%の条件を満たせる最後のタイミングは、${t70}日分を受け取るまでです。</p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+document.getElementById("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>

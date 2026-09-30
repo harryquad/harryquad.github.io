@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>退職後の手続き チェックリスト｜期限つきで自動作成（健康保険・年金・失業保険・税金）</title>
+<meta name="description" content="退職日と次の予定を選ぶだけで、退職後に必要な手続き（健康保険・年金・失業保険・住民税・確定申告など）を期限つきのチェックリストで自動作成。やることの漏れを防ぐ無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/taishoku-tetsuzuki/">
+<link rel="stylesheet" href="/common.css">
+<style>
+.group{margin-top:18px}
+.group h3{font-size:1rem;margin:0 0 8px}
+.item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.item input{margin-top:5px;width:18px;height:18px;flex:none}
+.item .body{flex:1}
+.item .ttl{font-weight:600}
+.item .due{font-size:.85rem;color:var(--warn);font-weight:700}
+.item .desc{font-size:.88rem;color:var(--muted)}
+.item.done .ttl{text-decoration:line-through;color:var(--muted)}
+.progress{height:8px;background:var(--bg);border-radius:99px;overflow:hidden;margin-top:6px}
+.progress div{height:100%;background:var(--good);width:0}
+</style>
+</head>
+<body>
+<header class="site-header"><div><a href="/">退職・転職 お役立ちツール</a></div></header>
+<div class="wrap">
+  <h1>退職後の手続き チェックリスト</h1>
+  <p class="lead">退職日と退職後の予定を選ぶと、あなたに必要な手続きを<strong>期限つき</strong>で一覧にします。チェックした内容はこのブラウザに保存されます。</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field"><label for="retire">退職日</label><input type="date" id="retire"></div>
+      <div class="field">
+        <label for="plan">退職後の予定</label>
+        <select id="plan">
+          <option value="next">退職日の翌日に次の会社に入社</option>
+          <option value="gap">少し空いてから次の会社に入社</option>
+          <option value="search">しばらく求職活動（失業保険をもらう）</option>
+          <option value="rest">しばらく働かない（失業保険はもらわない）</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <div class="checks">
+        <label><input type="checkbox" id="family">家族（配偶者など）の扶養に入る予定</label>
+        <label><input type="checkbox" id="severance">退職金をもらう</label>
+      </div>
+    </div>
+    <button id="calc">チェックリストを作る</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>退職後の手続きのよくある質問</h2>
+    <h3>いちばん急ぐ手続きは？</h3>
+    <p>健康保険と年金の切り替えです。国民健康保険・国民年金は退職日の翌日から14日以内、会社の健康保険を続ける任意継続は20日以内が期限です。すぐに次の会社に入る場合は、新しい会社が手続きしてくれます。</p>
+    <h3>会社から受け取る書類は？</h3>
+    <p>源泉徴収票、雇用保険被保険者証、離職票（失業保険をもらう場合）が主なものです。年金手帳や基礎年金番号通知書を会社に預けている場合は返してもらいましょう。</p>
+    <h3>確定申告は必要？</h3>
+    <p>年内に再就職すれば、新しい会社に前の会社の源泉徴収票を出すと年末調整で精算されます。年内に再就職しない場合は、翌年に確定申告をすると、払いすぎた所得税が戻ってくることが多いです。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>一般的な会社員の場合の目安です。手続きの詳細は、会社・市区町村・年金事務所・ハローワークにご確認ください。</footer>
+</div>
+
+<script src="/common.js"></script>
+<script>
+const STORE = "taishoku-tetsuzuki-checked";
+let checked = {};
+try { checked = JSON.parse(localStorage.getItem(STORE) || "{}"); } catch { checked = {}; }
+const save = () => { try { localStorage.setItem(STORE, JSON.stringify(checked)); } catch {} };
+const md = d => `${d.getMonth() + 1}/${d.getDate()}（${WD[d.getDay()]}）`;
+
+function build(retire, plan, family, severance) {
+  const after = n => addDays(retire, n);
+  const y = retire.getFullYear();
+  const gap = plan !== "next";
+  const groups = [];
+
+  const beforeItems = [
+    { id: "return", t: "会社の貸与品を返す", due: `最終出社日まで`, d: "社員証・パソコン・制服・名刺など。健康保険の資格確認書や保険証が手元にある場合は、それも返却します。" },
+    { id: "gensen", t: "源泉徴収票を受け取る", due: "退職後1ヶ月以内に届くのが一般的", d: "次の会社の年末調整や、確定申告で必要です。" },
+    { id: "koyohoken", t: "雇用保険被保険者証を受け取る", due: "退職時", d: "次の会社に提出します。会社が保管していることが多いので、退職時に確認しましょう。" },
+    { id: "nenkin", t: "年金手帳・基礎年金番号通知書を返してもらう", due: "退職時（会社に預けている場合）", d: "" },
+  ];
+  if (plan === "search") beforeItems.push({ id: "rishoku", t: "離職票を受け取る", due: "退職後10日前後で届く", d: "失業保険の手続きに必要です。届かない場合は会社に確認しましょう。" });
+  if (severance) beforeItems.push({ id: "taishokushotoku", t: "「退職所得の受給に関する申告書」を会社に出す", due: "退職金を受け取る前", d: "出さないと退職金から20.42%の所得税が引かれ、確定申告が必要になります。" });
+  groups.push({ h: "会社とのやりとり", items: beforeItems });
+
+  if (!gap) {
+    groups.push({ h: "健康保険・年金", items: [
+      { id: "newco", t: "新しい会社に入社書類を出す", due: "入社日", d: "健康保険・厚生年金の手続きは新しい会社が行います。雇用保険被保険者証・年金手帳（基礎年金番号がわかるもの）を渡しましょう。" },
+    ] });
+  } else if (family) {
+    groups.push({ h: "健康保険・年金", items: [
+      { id: "fuyo", t: "家族の勤務先で扶養に入る手続き", due: `${md(after(5))}ごろまで（退職日の翌日から5日以内が目安）`, d: "健康保険の被扶養者になる手続きと、配偶者の扶養なら国民年金の第3号被保険者の手続きを、家族の勤務先を通じて行います。失業保険をもらう間は、金額によって扶養に入れない場合があります。" },
+    ] });
+  } else {
+    groups.push({ h: "健康保険・年金", items: [
+      { id: "kenpo", t: "健康保険を選んで手続きする", due: `国民健康保険は${md(after(14))}まで ／ 任意継続は${md(after(20))}まで`, d: "市区町村の国民健康保険に入るか、会社の健康保険を最長2年続ける「任意継続」を選びます。保険料はどちらが安いか、市区町村と健康保険組合に問い合わせて比べましょう。" },
+      { id: "kokumin", t: "国民年金に切り替える", due: `${md(after(14))}まで`, d: "住んでいる市区町村の窓口かマイナポータルで手続きします。収入が減った場合は、保険料の免除・猶予も申請できます（失業による特例あり）。" },
+    ] });
+  }
+
+  if (plan === "search") {
+    groups.push({ h: "失業保険", items: [
+      { id: "hw", t: "ハローワークで求職の申し込みをする", due: "離職票が届いたらすぐ", d: "失業保険を受け取れるのは、原則として退職日の翌日から1年間です。手続きが遅れると、もらえる日数が残っていても受け取れなくなることがあります。持ち物：離職票、マイナンバーカード、写真、本人名義の通帳など。" },
+      { id: "setsumei", t: "雇用保険の説明会に出る・失業の認定を受ける", due: "ハローワークで指定された日", d: "原則4週間に1回、ハローワークで失業の認定を受けると振り込まれます。" },
+    ] });
+  }
+
+  const taxItems = [
+    { id: "jumin", t: "住民税の残りを確認する", due: "退職月によって異なる", d: "1〜4月の退職なら最後の給料から一括で、6〜12月の退職なら後日届く納付書で払うのが原則です。<a href=\"/jyuminzei/\">退職後の住民税を計算する</a>" },
+  ];
+  if (plan === "next" || plan === "gap") taxItems.push({ id: "nencho", t: "新しい会社に前の会社の源泉徴収票を出す", due: `${y}年の年末調整まで`, d: "年内に入社すれば、前の会社の分とまとめて年末調整してもらえます。" });
+  else taxItems.push({ id: "kakutei", t: "確定申告をする", due: `${y + 1}年1月以降（通常は3月15日まで）`, d: "年内に再就職しなかった場合、確定申告をすると払いすぎた所得税が戻ってくることが多いです。源泉徴収票と、退職後に払った国民健康保険・国民年金の領収書を用意しましょう。" });
+  groups.push({ h: "税金", items: taxItems });
+  return groups;
+}
+
+function render() {
+  const out = document.getElementById("result");
+  out.hidden = false;
+  const retire = parseDate(document.getElementById("retire").value);
+  if (!retire) { out.innerHTML = '<p class="err">退職日を入力してください。</p>'; return; }
+  const groups = build(retire, document.getElementById("plan").value, document.getElementById("family").checked, document.getElementById("severance").checked);
+  const all = groups.flatMap(g => g.items);
+  out.innerHTML = `
+    <h2>あなたの手続きリスト（全${all.length}件）</h2>
+    <div class="hint" id="count"></div><div class="progress"><div id="bar"></div></div>
+    ${groups.map(g => `<div class="group"><h3>${g.h}</h3>${g.items.map(i => `
+      <label class="item ${checked[i.id] ? "done" : ""}" data-id="${i.id}">
+        <input type="checkbox" ${checked[i.id] ? "checked" : ""}>
+        <div class="body"><div class="ttl">${i.t}</div><div class="due">期限：${i.due}</div>${i.d ? `<div class="desc">${i.d}</div>` : ""}</div>
+      </label>`).join("")}</div>`).join("")}
+    <p class="note">チェックの状態はこのブラウザに保存されます。</p>`;
+  const update = () => {
+    const done = all.filter(i => checked[i.id]).length;
+    document.getElementById("count").textContent = `${done} / ${all.length} 件 完了`;
+    document.getElementById("bar").style.width = `${done / all.length * 100}%`;
+  };
+  out.querySelectorAll(".item input").forEach(cb => cb.addEventListener("change", () => {
+    const item = cb.closest(".item");
+    checked[item.dataset.id] = cb.checked;
+    item.classList.toggle("done", cb.checked);
+    save(); update();
+  }));
+  update();
+}
+
+const t = new Date();
+document.getElementById("retire").value = ymd(new Date(t.getFullYear(), t.getMonth() + 2, 0));
+document.getElementById("calc").addEventListener("click", () => { render(); document.getElementById("result").scrollIntoView({ behavior: "smooth", block: "start" }); });
+</script>
+</body>
+</html>

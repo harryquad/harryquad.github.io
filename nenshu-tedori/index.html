@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>年収 手取り 計算ツール｜2026年の税制対応・早見表つき</title>
+<meta name="description" content="年収（額面）を入れるだけで、社会保険料・所得税・住民税を差し引いた手取りを年額・月額で計算。2026年分の基礎控除・給与所得控除の引き上げに対応し、年収200万〜1,500万円の手取り早見表も掲載しています。">
+<link rel="canonical" href="https://harryquad.github.io/nenshu-tedori/">
+<link rel="stylesheet" href="/common.css">
+</head>
+<body>
+<header class="site-header"><div><a href="/">退職・転職 お役立ちツール</a></div></header>
+<div class="wrap">
+  <h1>年収 手取り 計算ツール</h1>
+  <p class="lead">年収（額面）を入れると、<strong>社会保険料・所得税・住民税</strong>を差し引いた<strong>手取り</strong>を年額と月額で表示します。2026年分の税制（基礎控除・給与所得控除の引き上げ）に対応しています。</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field"><label for="annual">年収（額面）</label><input type="number" id="annual" min="0" value="500">
+        <div class="hint">万円単位（ボーナス込み）</div></div>
+      <div class="field">
+        <label for="age">年齢</label>
+        <select id="age">
+          <option value="u40">39歳以下</option>
+          <option value="40">40〜64歳（介護保険料あり）</option>
+        </select>
+      </div>
+    </div>
+    <button id="calc">計算する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card">
+    <h2>年収別 手取り早見表（2026年・39歳以下・独身）</h2>
+    <div style="overflow-x:auto"><table class="info" id="table"></table></div>
+  </div>
+
+  <div class="card faq">
+    <h2>手取りについてよくある質問</h2>
+    <h3>額面と手取りの違いは？</h3>
+    <p>額面は会社が払う給料の総額、手取りはそこから社会保険料（健康保険・厚生年金・雇用保険）と税金（所得税・住民税）を引いて、実際に口座に振り込まれる金額です。</p>
+    <h3>2026年は手取りが増える？</h3>
+    <p>2026年分の所得税は、基礎控除と給与所得控除が引き上げられたため、特に年収が600万円台前半までの人は所得税が軽くなります。住民税の控除額は変わっていないため、住民税の額はほぼ変わりません。</p>
+    <h3>扶養家族がいる場合は？</h3>
+    <p>このツールは独身・扶養なしを想定しています。配偶者や子どもを扶養している場合、配偶者控除・扶養控除の分だけ税金が減り、手取りは表示より多くなります。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>令和8年（2026年）分の所得税の控除額をもとにした、独身・扶養なし・会社員の場合の概算です。社会保険料は健康保険5.0%、介護保険0.8%、厚生年金9.15%、雇用保険0.55%で計算しています。実際の金額は加入している健康保険や住んでいる地域によって変わります。</footer>
+</div>
+
+<script src="/common.js"></script>
+<script src="/tax.js"></script>
+<script>
+function calc() {
+  const out = document.getElementById("result");
+  out.hidden = false;
+  const annual = (Number(document.getElementById("annual").value) || 0) * 10000;
+  if (!annual) { out.innerHTML = '<p class="err">年収を入力してください。</p>'; return; }
+  const r = takeHome(annual, document.getElementById("age").value === "40");
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat good"><div class="k">手取り（年間）</div><div class="v">${yen(r.net)}</div></div>
+      <div class="stat good"><div class="k">手取り（月あたり）</div><div class="v">${yen(r.net / 12)}</div></div>
+      <div class="stat"><div class="k">手取りの割合</div><div class="v">${(r.net / annual * 100).toFixed(1)}%</div></div>
+    </div>
+    <table class="info">
+      <tr><td>年収（額面）</td><td class="num">${yen(annual)}</td></tr>
+      <tr><td>厚生年金</td><td class="num">${yen(r.si.pension)}</td></tr>
+      <tr><td>健康保険（介護保険を含む）</td><td class="num">${yen(r.si.health)}</td></tr>
+      <tr><td>雇用保険</td><td class="num">${yen(r.si.employment)}</td></tr>
+      <tr><td>所得税（復興特別所得税を含む）</td><td class="num">${yen(r.incomeTax)}</td></tr>
+      <tr><td>住民税</td><td class="num">${yen(r.residentTax)}</td></tr>
+      <tr><td><strong>手取り</strong></td><td class="num"><strong>${yen(r.net)}</strong></td></tr>
+    </table>
+    <p class="note">ボーナスがある場合、毎月の手取りはこの「月あたり」より少なく、ボーナス月に多くなります。転職で年収が変わるなら → <a href="/tedori-hikaku/">転職後の手取りを比較する</a></p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// 早見表
+const rows = [200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 800, 900, 1000, 1200, 1500].map(m => {
+  const r = takeHome(m * 10000, false);
+  return `<tr><td>${m}万円</td><td class="num">${yen(r.net)}</td><td class="num">${yen(r.net / 12)}</td><td class="num">${(r.net / (m * 10000) * 100).toFixed(1)}%</td></tr>`;
+});
+document.getElementById("table").innerHTML = `<tr><th>年収</th><th class="num">手取り（年）</th><th class="num">手取り（月）</th><th class="num">割合</th></tr>${rows.join("")}`;
+document.getElementById("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>
