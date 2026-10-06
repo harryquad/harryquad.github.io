@@ -1,3 +1,13 @@
 User-agent: *
 Allow: /
 Sitemap: https://harryquad.github.io/sitemap.xml
+Sitemap: https://harryquad.github.io/furusato/sitemap.xml
+Sitemap: https://harryquad.github.io/nenmatsu/sitemap.xml
+Sitemap: https://harryquad.github.io/kakutei/sitemap.xml
+Sitemap: https://harryquad.github.io/kuruma/sitemap.xml
+Sitemap: https://harryquad.github.io/hikkoshi/sitemap.xml
+Sitemap: https://harryquad.github.io/jutaku/sitemap.xml
+Sitemap: https://harryquad.github.io/denki/sitemap.xml
+Sitemap: https://harryquad.github.io/nisa/sitemap.xml
+Sitemap: https://harryquad.github.io/shakkin/sitemap.xml
+Sitemap: https://harryquad.github.io/fudosan/sitemap.xml
