@@ -16,3 +16,4 @@ Sitemap: https://harryquad.github.io/hensai/sitemap.xml
 Sitemap: https://harryquad.github.io/souzoku/sitemap.xml
 Sitemap: https://harryquad.github.io/kaden/sitemap.xml
 Sitemap: https://harryquad.github.io/kyufu/sitemap.xml
+Sitemap: https://harryquad.github.io/jikyu-hayami/sitemap.xml
