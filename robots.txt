@@ -13,3 +13,4 @@ Sitemap: https://harryquad.github.io/shakkin/sitemap.xml
 Sitemap: https://harryquad.github.io/fudosan/sitemap.xml
 Sitemap: https://harryquad.github.io/nenshu/sitemap.xml
 Sitemap: https://harryquad.github.io/hensai/sitemap.xml
+Sitemap: https://harryquad.github.io/souzoku/sitemap.xml
