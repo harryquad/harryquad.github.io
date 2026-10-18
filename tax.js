@@ -14,7 +14,7 @@ function incomeTaxOf(taxable) {
   return Math.floor(Math.round(taxable * rate - minus) * 1021 / 1000);
 }
 
-// 給与所得控除（minは最低保障額。所得税は令和8年分の特例で74万円、住民税は65万円）
+// 給与所得控除（minは最低保障額。令和8年分の所得税・令和9年度分の住民税は74万円）
 function salaryDeduction(a, min) {
   let d;
   if (a <= 3600000) d = a * 0.3 + 80000;
@@ -46,7 +46,7 @@ function socialInsurance(annual, over40, months = 12) {
 
 // 住民税（年額）。socialは社会保険料の年額
 function residentTaxOf(annual, social) {
-  const income = annual - salaryDeduction(annual, 650000);
+  const income = annual - salaryDeduction(annual, 740000);
   if (income <= 450000) return 0;
   const taxable = Math.max(0, Math.floor((income - social - 430000) / 1000) * 1000);
   return taxable * 0.1 + 5000;
