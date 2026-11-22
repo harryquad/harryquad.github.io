@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ボーナス 手取り 計算ツール｜2026年の賞与の税率表・保険料率に対応</title>
+<meta name="description" content="ボーナス（賞与）の額面と前月の給料を入れると、健康保険・厚生年金・雇用保険・子ども・子育て支援金と所得税を差し引いた手取りを計算します。令和8年分の「賞与に対する源泉徴収税額の算出率の表」と、協会けんぽの都道府県別の料率に対応しています。">
+<link rel="canonical" href="https://okanenokeisan.com/bonus/">
+<!--sw-head-->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="退職・転職 お役立ちツール">
+<meta property="og:title" content="ボーナス 手取り 計算ツール｜2026年の賞与の税率表・保険料率に対応">
+<meta property="og:description" content="ボーナス（賞与）の額面と前月の給料を入れると、健康保険・厚生年金・雇用保険・子ども・子育て支援金と所得税を差し引いた手取りを計算します。令和8年分の「賞与に対する源泉徴収税額の算出率の表」と、協会けんぽの都道府県別の料率に対応しています。">
+<meta property="og:url" content="https://okanenokeisan.com/bonus/">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-CTGWFB173X"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-CTGWFB173X');document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('button#calc,button#judge,button#make');if(b)gtag('event','tool_use',{tool_path:location.pathname,button_id:b.id});},true);</script>
+<!--/sw-head-->
+<link rel="stylesheet" href="/common.css">
+</head>
+<body>
+<header class="site-header"><div><a href="/">退職・転職 お役立ちツール</a></div></header>
+<div class="wrap">
+<!--sw-pr--><p class="pr-note" style="font-size:.75rem;color:var(--muted);margin:0 0 8px">※このページには広告（PR）が含まれます。</p><!--/sw-pr-->
+  <h1>ボーナス 手取り 計算ツール</h1>
+  <p class="lead">ボーナス（賞与）の額面と<strong>前月の給料</strong>を入れると、社会保険料と所得税を差し引いた<strong>手取り</strong>を計算します。2026年（令和8年）に支払われるボーナスの税率表・保険料率に対応しています。</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field"><label for="bonus">ボーナスの額面</label><input type="number" id="bonus" min="0" value="50">
+        <div class="hint">万円単位（例：50 → 50万円）</div></div>
+      <div class="field"><label for="prev">前月の給料（額面）</label><input type="number" id="prev" min="0" value="30">
+        <div class="hint">万円単位。ボーナスを受け取る月の前の月の給料（残業代を含み、通勤手当は除く）</div></div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label for="age">年齢</label>
+        <select id="age">
+          <option value="u40">39歳以下</option>
+          <option value="40">40〜64歳（介護保険料あり）</option>
+          <option value="65">65〜69歳</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="deps">扶養親族等の数</label>
+        <select id="deps">
+          <option value="0">0人</option><option value="1">1人</option><option value="2">2人</option><option value="3">3人</option>
+          <option value="4">4人</option><option value="5">5人</option><option value="6">6人</option><option value="7">7人以上</option>
+          <option value="otsu">扶養控除等申告書を出していない（副業先など）</option>
+        </select>
+        <div class="hint">年末調整の「扶養控除等申告書」に書いた人数。配偶者は、年収などの条件を満たす場合だけ数えます</div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label for="pref">健康保険（協会けんぽの都道府県）</label>
+        <select id="pref"></select>
+        <div class="hint">会社の健康保険組合に入っている場合は「その他」を選んで料率を入力</div>
+      </div>
+      <div class="field" id="customWrap" hidden>
+        <label for="custom">健康保険料率（労使合計）</label><input type="number" id="custom" min="0" step="0.01" value="9.30">
+        <div class="hint">%。給与明細や組合のサイトで確認できます</div>
+      </div>
+      <div class="field">
+        <label for="industry">会社の業種（雇用保険）</label>
+        <select id="industry">
+          <option value="general">一般の事業</option>
+          <option value="special">建設・農林水産・清酒製造</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label for="prevSocial">前月の給料から引かれた社会保険料の合計（分かる場合）</label><input type="number" id="prevSocial" min="0" placeholder="空欄なら自動で計算">
+      <div class="hint">円単位。給与明細の健康保険・介護保険・厚生年金・雇用保険の合計。入れると税率がより正確になります</div></div>
+    <button id="calc">計算する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <!--sw-ad--><div class="ad on"><p style="margin:0 0 4px;font-size:.75rem;color:var(--muted);font-weight:700">PR（広告）</p><p style="margin:0 0 6px;font-weight:700">iDeCoの口座を開くなら</p><ul style="margin:0;padding-left:1.2em"><li style="margin:4px 0"><a href="https://px.a8.net/svt/ejp?a8mat=4BEK9C+DWPKJ6+3XCC+BXIYQ&id1=site&id2=bonus" rel="nofollow sponsored">松井証券ではじめるiDeCo</a><img border="0" width="1" height="1" src="https://www18.a8.net/0.gif?a8mat=4BEK9C+DWPKJ6+3XCC+BXIYQ" alt=""><br><small style="color:var(--muted)">松井証券のiDeCo（個人型確定拠出年金）</small></li></ul><p style="margin:8px 0 0;font-size:.78rem;color:var(--muted)">iDeCoの口座は1人1つで、金融機関ごとに手数料や選べる商品が違います。開設する前に比べて選びましょう。</p></div><!--/sw-ad-->
+
+  <div class="card">
+    <h2>ボーナス 手取り 早見表（2026年・39歳以下・扶養なし）</h2>
+    <p class="hint" style="margin:0 0 8px">協会けんぽの全国平均（9.90%）・一般の事業で計算。横は前月の給料（額面）です。</p>
+    <div style="overflow-x:auto"><table class="info" id="table"></table></div>
+  </div>
+
+  <div class="card faq">
+    <h2>ボーナスの手取りのしくみ</h2>
+    <h3>ボーナスの手取りは額面の何割？</h3>
+    <p>前月の給料が30万円・扶養なし・39歳以下の人が50万円のボーナスを受け取ると、社会保険料が73,575円、所得税が17,415円引かれ、手取りは409,010円（約82%）です。ボーナスが100万円・前月の給料が50万円なら、手取りは約73%まで下がります。ボーナスが多い人ほど、前月の給料も高いことが多く、税率が上がるためです。</p>
+    <h3>所得税の率は「前月の給料」で決まる</h3>
+    <p>ボーナスの所得税は、ボーナスの金額ではなく、<strong>前月の給料（社会保険料を引いた後）と扶養の人数</strong>で決まる率をかけて計算します。同じ50万円のボーナスでも、扶養なしの場合、前月の給料が25万円なら所得税は17,415円、45万円なら52,245円です。前月に残業が多かった月は、ボーナスの税金も多く引かれることがあります。</p>
+    <h3>引かれすぎた税金は年末調整で戻る</h3>
+    <p>ボーナスから引かれる所得税は、その時点での仮の金額です。1年分の税金は、12月の年末調整で、給料とボーナスを合わせた年収から計算し直されます。前月の給料が高かったために多めに引かれた分は、年末調整で調整されます。このため、このツールの金額は「振り込まれる額」の目安で、最終的な税金の額とは一致しないことがあります。</p>
+    <h3>住民税はボーナスから引かれない</h3>
+    <p>会社員の住民税は、1年分を12回に分けて毎月の給料から引かれます（特別徴収）。ボーナスからは引かれないため、このツールでも住民税は計算に入れていません。ただし、住民税の金額は、ボーナスも含めた前の年の年収で決まります。</p>
+    <h3>社会保険料は1,000円未満を切り捨てた額にかかる</h3>
+    <p>健康保険・厚生年金の保険料は、ボーナスの額から1,000円未満を切り捨てた「標準賞与額」に料率をかけて計算します。上限があり、厚生年金は1回（1か月）150万円、健康保険は4月〜翌年3月の合計で573万円です。雇用保険料は、ボーナスの額にそのまま料率をかけます。</p>
+  </div>
+
+  <div class="card faq">
+    <h2>2025年と比べて、何が変わった？</h2>
+    <p>2026年に支払われるボーナスでは、次の4つが変わりました。</p>
+    <ul style="color:var(--muted);margin:8px 0;padding-left:1.2em">
+      <li><strong>子ども・子育て支援金</strong>：2026年4月分から、健康保険料と一緒に0.23%（本人負担0.115%）が引かれるようになりました。ボーナスにもかかります。</li>
+      <li><strong>協会けんぽの健康保険料率</strong>：全国平均が10.00%から9.90%に下がりました（本人負担は0.05%減）。都道府県によって下がり幅が違います。</li>
+      <li><strong>雇用保険料率</strong>：一般の事業の本人負担が0.55%から0.5%に下がりました。</li>
+      <li><strong>所得税の算出率の表</strong>：基礎控除などの見直しに合わせて、率が変わる境目の金額が上がりました。扶養なしの場合、税率が0%になるのは前月の給料（社会保険料を引いた後）が68,000円未満から82,000円未満に変わりました。</li>
+    </ul>
+    <p>社会保険料は、支援金で増えた分と、健康保険・雇用保険で減った分がほぼ同じなので、合計はほとんど変わりません（50万円のボーナスで75円増）。手取りが大きく変わるのは、境目が上がったことで<strong>所得税の率が1段下がる人</strong>です。前月の給料30万円・ボーナス50万円・扶養なしの場合、所得税の率は6.126%から4.084%になり、手取りは2025年より8,637円増えます。一方、前月の給料35万円・ボーナス70万円のように率が変わらない人は、手取りはほぼ同じ（98円減）です。</p>
+  </div>
+
+  <div class="card faq">
+    <h2>このツールの計算で気をつけたこと</h2>
+    <p>実際の給与明細と比べたときに差が出やすい点を、あらかじめ書いておきます。</p>
+    <h3>前月の社会保険料は「標準報酬月額」で計算している</h3>
+    <p>毎月の給料の社会保険料は、その月の給料ではなく、4〜6月の給料などから決まる「標準報酬月額」で計算されます。このツールは前月の給料をそのまま標準報酬月額に当てはめて計算するので、4〜6月に残業が多かった人などは、実際の金額とずれることがあります。税率の境目の近くにいる人は、給与明細の社会保険料を入力すると正確になります。</p>
+    <h3>前月の給料がない・ボーナスが前月の10倍を超える場合は計算しない</h3>
+    <p>入社した直後で前月の給料がない場合や、ボーナスが前月の給料（社会保険料を引いた後）の10倍を超える場合は、税率表ではなく「月額表」を使う別の計算方法になります（国税庁 No.2523）。このツールでは、この場合は社会保険料だけを表示します。</p>
+    <h3>12月のボーナスと扶養の数</h3>
+    <p>2026年12月1日以後に支払う給与・ボーナスから、扶養親族の所得の要件が「58万円以下」から「62万円以下」（給与だけなら年収136万円以下）に広がりました。新たに扶養に入れられる家族がいる場合は、会社に扶養控除等（異動）申告書を出すと、ボーナスの税金の計算でも人数に数えられます。</p>
+    <h3>健康保険組合・共済組合の人</h3>
+    <p>都道府県のリストは協会けんぽの料率です。大きな会社の健康保険組合は料率が違い、本人の負担割合が半分より少ない組合もあります。「その他」に料率を入れると計算できますが、負担割合は半分として計算します。</p>
+  </div>
+
+  <div class="card faq">
+    <h2>よくある質問</h2>
+    <h3>退職する月にもらったボーナスにも社会保険料はかかる？</h3>
+    <p>月の途中で退職した場合など、社会保険の資格を失う月に支払われたボーナスには、健康保険・厚生年金の保険料はかかりません（日本年金機構）。月末に退職すると、その月は資格を失う月にならないため、保険料がかかります。雇用保険料と所得税は、どちらの場合もかかります。</p>
+    <h3>夏と冬で同じ金額なのに手取りが違うのはなぜ？</h3>
+    <p>前月に支払われた給料（6月のボーナスなら5月、12月なら11月に支払われた給料）の金額が違うと、所得税の率が変わるためです。また、40歳になった月からは介護保険料が加わります。</p>
+    <h3>年収の手取りも知りたい</h3>
+    <p>年収（給料とボーナスの合計）から1年分の手取りを計算するには、<a href="/nenshu-tedori/">年収 手取り 計算ツール</a>を使ってください。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>令和8年（2026年）分の「賞与に対する源泉徴収税額の算出率の表」と、令和8年度の保険料率（協会けんぽ、厚生年金18.3%、雇用保険、子ども・子育て支援金0.23%）で計算した概算です。実際の金額は、会社の計算方法や加入している健康保険によって変わることがあります。</footer>
+<!--sw-foot-->
+<div style="font-size:.8rem;color:var(--muted);margin-top:18px;border-top:1px solid var(--line);padding-top:14px"><p style="margin:0 0 10px">あわせて使いたい：<a href="/kyufu/">失業保険 給料別 早見表</a>・<a href="/taishoku-zei/">退職金の税金・手取り 早見表</a>・<a href="/nenshu/">年収・月収別 手取り早見表</a>・<a href="/jikyu-hayami/">時給別 月収・年収 早見表</a></p><p style="margin:0 0 6px;font-weight:600">計算の根拠（公的機関などの情報）</p><ul style="margin:0 0 10px;padding-left:1.2em"><li><a href="https://www.hellowork.mhlw.go.jp/insurance/insurance_basicbenefit.html" target="_blank" rel="noopener">ハローワーク 基本手当について</a></li><li><a href="https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/roudouzikan/index.html" target="_blank" rel="noopener">厚生労働省 労働時間・休日（年次有給休暇）</a></li><li><a href="https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1420.htm" target="_blank" rel="noopener">国税庁 No.1420 退職手当等を受けたとき</a></li><li><a href="https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1410.htm" target="_blank" rel="noopener">国税庁 No.1410 給与所得控除</a></li><li><a href="https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/2260.htm" target="_blank" rel="noopener">国税庁 No.2260 所得税の税率</a></li><li><a href="https://www.nta.go.jp/taxes/shiraberu/taxanswer/gensen/2523.htm" target="_blank" rel="noopener">国税庁 No.2523 賞与に対する源泉徴収</a></li><li><a href="https://www.nta.go.jp/publication/pamph/gensen/zeigakuhyo2026/01.htm" target="_blank" rel="noopener">国税庁 令和8年分 源泉徴収税額表（賞与に対する源泉徴収税額の算出率の表）</a></li><li><a href="https://www.nenkin.go.jp/service/kounen/hokenryo/hoshu/20141203.html" target="_blank" rel="noopener">日本年金機構 従業員に賞与を支給したときの手続き</a></li><li><a href="https://www.kyoukaikenpo.or.jp/g7/cat330/sb3130/r08/260216/" target="_blank" rel="noopener">協会けんぽ 令和8年度の健康保険料率・子ども・子育て支援金率</a></li><li><a href="https://www.mhlw.go.jp/content/001692566.pdf" target="_blank" rel="noopener">厚生労働省 令和8年度 雇用保険料率のご案内</a></li></ul><p style="margin:0 0 10px">最終更新日：2026年11月22日</p><nav style="display:flex;flex-wrap:wrap;gap:6px 16px"><a href="/sites/">お金の計算サイト一覧</a><a href="/about/">運営者情報</a><a href="/privacy/">プライバシーポリシー</a><a href="/contact/">お問い合わせ</a></nav></div>
+<!--/sw-foot-->
+</div>
+
+<script src="/common.js"></script>
+<script src="/bonus/bonus.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const pref = $("pref");
+pref.innerHTML = Object.entries(KENPO).map(([k, v]) => `<option value="${k}">${k}（${v.toFixed(2)}%）</option>`).join("") + '<option value="custom">その他（健康保険組合など）</option>';
+pref.addEventListener("change", () => { $("customWrap").hidden = pref.value !== "custom"; });
+const pct = r => (r / 1000).toFixed(3) + "%";
+
+function calc() {
+  const out = $("result");
+  out.hidden = false;
+  const bonus = Math.round((Number($("bonus").value) || 0) * 10000);
+  const prev = Math.round((Number($("prev").value) || 0) * 10000);
+  if (!bonus) { out.innerHTML = '<p class="err">ボーナスの額面を入力してください。</p>'; return; }
+  const kenpo = pref.value === "custom" ? Number($("custom").value) || 0 : KENPO[pref.value];
+  const ps = $("prevSocial").value.trim();
+  const depsV = $("deps").value;
+  const r = bonusTakeHome({
+    bonus, prev, age: $("age").value, deps: depsV === "otsu" ? "otsu" : Number(depsV),
+    kenpo, industry: $("industry").value, prevSocial: ps === "" ? null : Number(ps),
+  });
+  const rows = `
+      <tr><td>ボーナス（額面）</td><td class="num">${yen(bonus)}</td></tr>
+      <tr><td>健康保険${$("age").value === "40" ? "（介護保険を含む）" : ""}</td><td class="num">${yen(r.si.health)}</td></tr>
+      <tr><td>子ども・子育て支援金</td><td class="num">${yen(r.si.shien)}</td></tr>
+      <tr><td>厚生年金</td><td class="num">${yen(r.si.pension)}</td></tr>
+      <tr><td>雇用保険</td><td class="num">${yen(r.si.koyo)}</td></tr>`;
+  if (r.special) {
+    const why = r.special === "noprev" ? "前月の給料がない（または社会保険料以下の）場合" : "ボーナスが前月の給料（社会保険料を引いた後）の10倍を超える場合";
+    out.innerHTML = `
+      <p class="err">${why}は、所得税を「月額表」で計算する別の方法になるため、このツールでは所得税を計算できません。</p>
+      <table class="info">${rows}
+        <tr><td><strong>社会保険料を引いた後</strong></td><td class="num"><strong>${yen(r.after)}</strong></td></tr>
+      </table>
+      <p class="note">所得税の計算方法は、国税庁の <a href="https://www.nta.go.jp/taxes/shiraberu/taxanswer/gensen/2523.htm" target="_blank" rel="noopener">No.2523 賞与に対する源泉徴収</a> を参照してください。</p>`;
+    out.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat good"><div class="k">手取り</div><div class="v">${yen(r.net)}</div></div>
+      <div class="stat"><div class="k">引かれる金額</div><div class="v">${yen(bonus - r.net)}</div></div>
+      <div class="stat"><div class="k">手取りの割合</div><div class="v">${(r.net / bonus * 100).toFixed(1)}%</div></div>
+    </div>
+    <table class="info">${rows}
+      <tr><td>所得税（復興特別所得税を含む）</td><td class="num">${yen(r.tax)}</td></tr>
+      <tr><td><strong>手取り</strong></td><td class="num"><strong>${yen(r.net)}</strong></td></tr>
+    </table>
+    <p class="note">所得税の率：<strong>${pct(r.rate)}</strong>（前月の給料から社会保険料${yen(r.prevSocial)}${ps === "" ? "（目安）" : ""}を引いた${yen(r.prevNet)}と、扶養の数で決まります）。<br>
+    所得税は（ボーナス − 社会保険料）${yen(r.after)} × ${pct(r.rate)} で、1円未満は切り捨てです。引かれすぎた分は年末調整で精算されます。住民税はボーナスからは引かれません。</p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// 早見表
+const prevs = [20, 25, 30, 35, 40, 50];
+const head = `<tr><th>ボーナス</th>${prevs.map(p => `<th class="num">前月${p}万円</th>`).join("")}</tr>`;
+const body = [10, 20, 30, 40, 50, 60, 70, 80, 100, 150].map(b => `<tr><td>${b}万円</td>${prevs.map(p => {
+  const r = bonusTakeHome({ bonus: b * 10000, prev: p * 10000, age: "u40", deps: 0, kenpo: 9.9, industry: "general" });
+  return `<td class="num">${r.net == null ? "－" : yen(r.net)}</td>`;
+}).join("")}</tr>`).join("");
+$("table").innerHTML = head + body;
+$("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>
